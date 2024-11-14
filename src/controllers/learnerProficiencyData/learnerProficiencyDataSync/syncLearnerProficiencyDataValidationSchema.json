@@ -59,7 +59,7 @@
               }
             },
             "required": ["question_id", "learner_response", "question_set_id"],
-            "additionalProperties": false
+            "additionalProperties": true
           }
         }
       },

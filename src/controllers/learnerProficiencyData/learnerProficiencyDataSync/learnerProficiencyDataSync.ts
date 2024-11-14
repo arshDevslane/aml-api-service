@@ -27,7 +27,7 @@ import {
   getAggregateDataForGivenTaxonomyKey,
   getScoreForTheQuestion,
 } from './aggregation.helper';
-import { createLearnerJourney, readLearnerJourneyByLearnerIdAndQuestionSetId, updateLearnerJourney } from '../../../services/learnerJourney';
+import { createLearnerJourney, readLearnerJourney, readLearnerJourneyByLearnerIdAndQuestionSetId, updateLearnerJourney } from '../../../services/learnerJourney';
 import { LearnerJourneyStatus } from '../../../enums/learnerJourneyStatus';
 import moment from 'moment';
 import { Learner } from '../../../models/learner';
@@ -243,9 +243,11 @@ const learnerProficiencyDataSync = async (req: Request, res: Response) => {
   await aggregateLearnerDataOnClassAndSkillLevel(learner, learnerAttempts);
   logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: learner data aggregated`);
 
+  const { learnerJourney: latestLearnerJourney } = await readLearnerJourney(learner_id);
+
   ResponseHandler.successResponse(req, res, {
     status: httpStatus.OK,
-    data: { message: 'Learner data synced successfully' },
+    data: { message: 'Learner data synced successfully', data: latestLearnerJourney },
   });
 };
 
