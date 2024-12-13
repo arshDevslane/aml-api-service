@@ -6,6 +6,11 @@ import { getQuestionSetByIdAndStatus } from '../../services/questionSet';
 import { amlError } from '../../types/amlError';
 import { ResponseHandler } from '../../utils/responseHandler';
 import { getAllQuestionsByIdentifiers } from '../../services/question';
+import { Question } from '../../models/question';
+import { QuestionType } from '../../enums/questionType';
+import { getFileUrlByFolderAndFileName } from '../../services/awsService';
+import { getContentByIds } from '../../services/content';
+import { Content } from '../../models/content';
 
 export const apiId = 'api.questionSet.read';
 
@@ -24,15 +29,30 @@ const readQuestionSetById = async (req: Request, res: Response) => {
   }
 
   const questionIds = questionSetDetails.questions.map((q: { identifier: any }) => q.identifier);
-
   const questionsDetails = await getAllQuestionsByIdentifiers(questionIds);
 
+  const contentIds = questionSetDetails.content_ids;
+  const contents = contentIds && contentIds?.length > 0 ? await getContentByIds(contentIds) : [];
+
   // Create a map of questions by their identifier for easy lookup
-  const questionsMap = new Map(questionsDetails.map((q: { identifier: any }) => [q.identifier, q]));
+  const questionsMap = new Map(
+    questionsDetails.map((q: Question) => {
+      if (q.question_type === QuestionType.MCQ && q?.question_body?.question_image) {
+        const { src, file_name } = q.question_body.question_image;
+        return [q.identifier, { ...q, question_body: { ...q.question_body, question_image_url: getFileUrlByFolderAndFileName(src, file_name) } }];
+      }
+      return [q.identifier, q];
+    }),
+  );
 
   // Combine the question set details with the question details, sorted by sequence
   const questionSetWithQuestions = {
     ...questionSetDetails,
+    contents: (contents as Content[]).reduce((agg: string[], curr) => {
+      const urls = (curr.media || [])?.map((media) => getFileUrlByFolderAndFileName(media.src, media.file_name));
+      agg = [...agg, ...urls];
+      return agg;
+    }, []),
     questions: questionSetDetails.questions
       .map((q: { identifier: any }) => questionsMap.get(q.identifier))
       .filter(Boolean)

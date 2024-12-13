@@ -45,6 +45,21 @@ export const getContentById = async (id: string, additionalConditions: object = 
   return contentDetails?.dataValues;
 };
 
+// Get a multiple Contents by IDs
+export const getContentByIds = async (ids: string[]): Promise<any> => {
+  // Combine base conditions with additional conditions
+  const conditions = {
+    identifier: ids,
+  };
+
+  const contentDetails = await Content.findAll({
+    where: conditions,
+    attributes: { exclude: ['id'] },
+  });
+
+  return contentDetails.map((c) => c.dataValues);
+};
+
 // Publish content by id
 export const publishContentById = async (id: string): Promise<any> => {
   const contentDetails = await Content.update({ status: Status.LIVE }, { where: { identifier: id }, returning: true });

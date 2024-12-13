@@ -47,3 +47,7 @@ export const uploadUrl = async (folderName: string, category: string, fileName: 
     expiresInSec: presignedUrlExpiry,
   };
 };
+
+export const getFileUrlByFolderAndFileName = (folderName: string, fileName: string) => {
+  return `https://${appConfiguration.bucketName}.s3.${appConfiguration.aws.bucketRegion}.amazonaws.com/${folderName}/${fileName}`;
+};
