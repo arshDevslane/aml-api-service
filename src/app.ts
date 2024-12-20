@@ -61,6 +61,7 @@ const initializeServer = (): void => {
     app.use(
       cors({
         credentials: true,
+        origin: true,
       }),
     );
 
