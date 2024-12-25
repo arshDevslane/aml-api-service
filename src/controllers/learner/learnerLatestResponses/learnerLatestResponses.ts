@@ -5,12 +5,11 @@ import { amlError } from '../../../types/amlError';
 import { readLearnerJourney } from '../../../services/learnerJourney';
 import { LearnerJourneyStatus } from '../../../enums/learnerJourneyStatus';
 import { ResponseHandler } from '../../../utils/responseHandler';
-import { getAllQuestionLevelDataByLearnerIdAndQuestionSetId } from '../../../services/learnerProficiencyData';
+import { getRecordsForLearnerByQuestionSetId } from '../../../services/learnerProficiencyData';
 import httpStatus from 'http-status';
 
-export const apiId = 'api.learner.journey.latest-responses';
-
 const leanerJourneyLatestResponseById = async (req: Request, res: Response) => {
+  const apiId = _.get(req, 'id');
   const learnerId = _.get(req, 'params.learner_id');
   const msgid = _.get(req, ['body', 'params', 'msgid']);
   const resmsgid = _.get(res, 'resmsgid');
@@ -33,7 +32,7 @@ const leanerJourneyLatestResponseById = async (req: Request, res: Response) => {
   const questionSetId = learnerJourney.question_set_id;
   const completedQuestionIds = learnerJourney.completed_question_ids;
 
-  const learnerProficiencyQuestionLevelData = await getAllQuestionLevelDataByLearnerIdAndQuestionSetId(learnerId, questionSetId);
+  const learnerProficiencyQuestionLevelData = await getRecordsForLearnerByQuestionSetId(learnerId, questionSetId);
 
   const learnerResponses = learnerProficiencyQuestionLevelData
     .filter((datum: any) => {

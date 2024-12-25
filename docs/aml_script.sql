@@ -2245,3 +2245,11 @@ create table if not exists users
 --------------------------------------------
 
 ALTER table repository DROP column tenant;
+
+--------------------------------------------
+-- Adding enable_feedback to question_set --
+--------------------------------------------
+
+ALTER TABLE question_set ADD COLUMN enable_feedback BOOLEAN DEFAULT TRUE;
+
+UPDATE question_set SET enable_feedback = FALSE WHERE question_set.purpose = 'Main Diagnostic';

@@ -69,11 +69,3 @@ export const updateLearnerProficiencyQuestionSetLevelData = async (transaction: 
   });
   return { updatedLearnerData };
 };
-
-export const getAllQuestionLevelDataByLearnerIdAndQuestionSetId = async (learnerId: string, questionSetId: string): Promise<LearnerProficiencyQuestionSetLevelData[]> => {
-  return LearnerProficiencyQuestionLevelData.findAll({
-    where: { learner_id: learnerId, question_set_id: questionSetId },
-    attributes: { exclude: ['id'] },
-    raw: true,
-  });
-};

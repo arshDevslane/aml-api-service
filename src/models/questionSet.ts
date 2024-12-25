@@ -21,6 +21,7 @@ export class QuestionSet extends Model {
   declare taxonomy: Taxonomy; // Using the detailed Taxonomy interface
   declare sub_skills?: Array<{ id: number; name: { [key: string]: string } }> | null;
   declare purpose?: string | null;
+  declare enable_feedback: boolean;
   declare is_atomic: boolean;
   declare gradient?: string | null;
   declare group_name?: number | null;
@@ -80,6 +81,11 @@ QuestionSet.init(
     purpose: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    enable_feedback: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
     },
     is_atomic: {
       type: DataTypes.BOOLEAN,
