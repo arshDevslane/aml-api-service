@@ -16,36 +16,33 @@ export const getScoreForTheQuestion = (question: Question, learnerResponse: { re
   let score = 0;
 
   switch (question_type) {
-    case QuestionType.GRID_1:
-    case QuestionType.FIB: {
+    case QuestionType.GRID_1: {
       if (question.operation === QuestionOperation.DIVISION) {
-        if (question_type === QuestionType.GRID_1) {
-          const quotient = _.get(answers, ['result', 'quotient'], '');
-          const remainder = _.get(answers, ['result', 'remainder'], '');
-          if (lrQuotient?.toString() === quotient.toString() && lrRemainder?.toString() === remainder.toString()) {
-            score = 1;
-          }
+        const quotient = _.get(answers, ['result', 'quotient'], '');
+        const remainder = _.get(answers, ['result', 'remainder'], '');
+        if (lrQuotient?.toString() === quotient.toString() && lrRemainder?.toString() === remainder?.toString()) {
+          score = 1;
         }
-        if (question_type === QuestionType.FIB) {
-          const fibType = _.get(answers, 'fib_type');
-          if (fibType.toString() === FibType.FIB_STANDARD) {
-            const correctAnswer = _.get(answers, ['result'], '');
-            if (correctAnswer.toString() === result?.toString()) {
-              score = 1;
-            }
-          }
-          if (fibType.toString() === FibType.FIB_QUOTIENT_REMAINDER) {
-            const quotient = _.get(answers, ['result', 'quotient'], '');
-            const remainder = _.get(answers, ['result', 'remainder'], '');
-            if (quotient.toString() === lrQuotient?.toString() && remainder.toString() === lrRemainder?.toString()) {
-              score = 1;
-            }
-          }
-        }
-        break;
       } else if (answers && answers.result.toString()) {
-        const { result: correctAnswer } = answers;
+        const correctAnswer = _.get(answers, ['result'], '');
         if (correctAnswer.toString() === result?.toString()) {
+          score = 1;
+        }
+      }
+      break;
+    }
+    case QuestionType.FIB: {
+      const fibType = _.get(answers, 'fib_type');
+      if ([FibType.FIB_STANDARD, FibType.FIB_STANDARD_WITH_IMAGE].includes(fibType)) {
+        const correctAnswer = _.get(answers, ['result'], '');
+        if (correctAnswer.toString() === result?.toString()) {
+          score = 1;
+        }
+      }
+      if ([FibType.FIB_QUOTIENT_REMAINDER, FibType.FIB_QUOTIENT_REMAINDER_WITH_IMAGE].includes(fibType)) {
+        const quotient = _.get(answers, ['result', 'quotient'], '');
+        const remainder = _.get(answers, ['result', 'remainder'], '');
+        if (quotient?.toString() === lrQuotient?.toString() && remainder?.toString() === lrRemainder?.toString()) {
           score = 1;
         }
       }
