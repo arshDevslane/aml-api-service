@@ -8,6 +8,7 @@ import { appConfiguration } from '../config';
 import pg from 'pg';
 import ConnectPgSimple from 'connect-pg-simple';
 import csrf from 'csurf';
+import { learnerAuth } from '../middlewares/learnerAuth';
 
 export const portalRouter = express.Router();
 
@@ -43,10 +44,10 @@ portalRouter.use(
 const csrfProtection = csrf({ cookie: true });
 portalRouter.use(csrfProtection);
 
-portalRouter.use('/board', boardRouter);
+portalRouter.use('/board', learnerAuth, boardRouter);
 
-portalRouter.use('/question-set', questionSetRouter);
+portalRouter.use('/question-set', learnerAuth, questionSetRouter);
 
 portalRouter.use('/auth', learnerAuthRouter);
 
-portalRouter.use('/learner', learnerRouter);
+portalRouter.use('/learner', learnerAuth, learnerRouter);
