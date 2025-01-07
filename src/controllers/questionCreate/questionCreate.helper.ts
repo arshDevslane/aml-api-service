@@ -492,9 +492,10 @@ const getAnswer = (skill: string, question_type: QuestionType, bodyObject: any) 
 };
 
 export const getQuestionBody = (data: any) => {
-  const questionBody = {};
   const { question_type, operation, question_body } = data;
   const { numbers, fib_type, question_image, options, correct_option } = question_body;
+
+  const questionBody = question_body;
 
   if ([QuestionType.GRID_1, QuestionType.GRID_2].includes(question_type) && numbers) {
     _.set(questionBody, ['numbers'], numbers);
