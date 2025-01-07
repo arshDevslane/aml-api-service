@@ -43,7 +43,7 @@ const createQuestion = async (req: Request, res: Response) => {
 
   // Create the repository object
   const repositoryObject = {
-    id: repository.identifier,
+    identifier: repository.identifier,
     name: repository.name,
   };
 
@@ -57,7 +57,7 @@ const createQuestion = async (req: Request, res: Response) => {
   }
 
   const boardObject = {
-    id: board.identifier,
+    identifier: board.identifier,
     name: board.name,
   };
 
@@ -71,7 +71,7 @@ const createQuestion = async (req: Request, res: Response) => {
   }
 
   const classObject = {
-    id: classEntity.identifier,
+    identifier: classEntity.identifier,
     name: classEntity.name,
   };
 
@@ -84,7 +84,7 @@ const createQuestion = async (req: Request, res: Response) => {
   }
 
   const l1SkillObject = {
-    id: l1Skill.identifier,
+    identifier: l1Skill.identifier,
     name: l1Skill.name,
   };
 
@@ -98,7 +98,7 @@ const createQuestion = async (req: Request, res: Response) => {
       throw amlError(code, 'L2 Skill not exists', 'NOT_FOUND', 404);
     }
     l2SkillObjects.push({
-      id: l2Skill.identifier,
+      identifier: l2Skill.identifier,
       name: l2Skill.name,
     });
   }
@@ -113,7 +113,7 @@ const createQuestion = async (req: Request, res: Response) => {
       throw amlError(code, 'L3 Skill not exists', 'NOT_FOUND', 404);
     }
     l3SkillObjects.push({
-      id: l3Skill.identifier,
+      identifier: l3Skill.identifier,
       name: l3Skill.name,
     });
   }
@@ -127,7 +127,7 @@ const createQuestion = async (req: Request, res: Response) => {
       throw amlError(code, 'sub Skill not exists', 'NOT_FOUND', 404);
     }
     subSkillObjects.push({
-      id: subSkill.id,
+      identifier: subSkill.id,
       name: subSkill.name,
     });
   }
