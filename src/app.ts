@@ -9,12 +9,15 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import RateLimit from 'express-rate-limit';
 import { cronProvider } from './providers/cron.provider';
+import { registerFunctionsOnClassString } from './utils/string.util';
 
 const { envPort } = appConfiguration;
 
 const app: Application = express();
 
 let server: ReturnType<typeof app.listen>;
+
+registerFunctionsOnClassString();
 
 // Define the error handler
 const unexpectedErrorHandler = (error: Error): void => {
