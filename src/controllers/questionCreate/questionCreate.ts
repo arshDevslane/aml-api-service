@@ -8,7 +8,6 @@ import { schemaValidation } from '../../services/validationService';
 import * as uuid from 'uuid';
 import { amlError } from '../../types/amlError';
 import { ResponseHandler } from '../../utils/responseHandler';
-// import { checkTenantNameExists } from '../../services/tenant';
 import { getRepositoryById } from '../../services/repository';
 import { boardService } from '../../services/boardService';
 import { getClassById } from '../../services/class';
