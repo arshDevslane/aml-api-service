@@ -103,10 +103,11 @@ export const getContentList = async (req: {
   };
   limit?: number;
   offset?: number;
+  sort_by?: string[][];
 }) => {
   const limit: number = _.get(req, 'limit', DEFAULT_LIMIT);
   const offset: number = _.get(req, 'offset', 0);
-  const { filters = {} } = req || {};
+  const { filters = {}, sort_by } = req || {};
   const searchQuery: string = _.get(req, 'search_query', '');
 
   let whereClause: any = {
@@ -187,11 +188,36 @@ export const getContentList = async (req: {
     };
   }
 
+  const order: any[] = [];
+  if (sort_by && sort_by.length) {
+    for (const sortOrder of sort_by) {
+      const [column, direction] = sortOrder;
+      switch (column) {
+        case 'name': {
+          order.push([Sequelize.literal(`name->>'en'`), direction]);
+          break;
+        }
+        case 'repository': {
+          order.push([Sequelize.literal(`repository->'name'->>'en'`), direction]);
+          break;
+        }
+        case 'l1_skill': {
+          order.push([Sequelize.literal(`taxonomy->'l1_skill'->'name'->>'en'`), direction]);
+          break;
+        }
+        default: {
+          order.push([column, direction]);
+        }
+      }
+    }
+  }
+
   const { rows, count } = await Content.findAndCountAll({
     limit,
     offset,
     where: whereClause,
     attributes: { exclude: ['id'] },
+    order: order.length ? order : [['updated_at', 'desc']],
   });
 
   return {
