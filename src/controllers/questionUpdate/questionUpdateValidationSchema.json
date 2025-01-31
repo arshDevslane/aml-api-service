@@ -59,6 +59,9 @@
             }
           }
         },
+        "x_id": {
+          "type": "string"
+        },
         "repository_id": {
           "type": "string"
         },
