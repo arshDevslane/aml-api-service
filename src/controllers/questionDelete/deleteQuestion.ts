@@ -5,6 +5,7 @@ import { questionService } from '../../services/questionService';
 import { amlError } from '../../types/amlError';
 import httpStatus from 'http-status';
 import { ResponseHandler } from '../../utils/responseHandler';
+import { questionSetQuestionMappingService } from '../../services/questionSetQuestionMappingService';
 
 export const apiId = 'api.question.delete';
 
@@ -22,6 +23,11 @@ const deleteQuestionById = async (req: Request, res: Response) => {
     throw amlError(code, 'Question not exists', 'NOT_FOUND', 404);
   }
 
+  const mappings = await questionSetQuestionMappingService.getEntriesForQuestionIds([question_id]);
+
+  for (const mapping of mappings) {
+    await questionSetQuestionMappingService.destroyById(mapping.id);
+  }
   await questionService.deleteQuestion(question_id);
 
   logger.info({ apiId, msgid, resmsgid, question_id, message: 'Question Deleted successfully' });
