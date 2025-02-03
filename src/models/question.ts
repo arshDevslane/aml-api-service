@@ -19,7 +19,7 @@ interface QuestionBody {
   question_image: { src: string; fileName: string; mimeType: string; mediaType: string };
   grid1_pre_fills_top: string;
   grid1_pre_fills_result: string;
-  grid1_show_carry: string;
+  grid1_show_carry: boolean;
 }
 
 export class Question extends Model {

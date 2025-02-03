@@ -37,7 +37,7 @@ const addGrid1Answer = (input: any) => {
 
   const result = n1 + n2;
   const resultStr = result.toString();
-  let isPrefil = grid1_show_carry === 'yes';
+  let isPrefil = grid1_show_carry;
   let errorMsg = '';
   let answerResult = '';
 
@@ -159,7 +159,7 @@ const subGrid1Answer = (input: any) => {
   const n2Str = grid_fib_n2.padStart(n1Str.length, '0');
   let result = 0;
   let answerResult = '';
-  let isPrefil = grid1_show_regroup === 'yes';
+  let isPrefil = grid1_show_regroup;
   const addPaddingToResult = addPaddingToDifference(grid_fib_n1, grid_fib_n2);
   let errorMsg = '';
 
