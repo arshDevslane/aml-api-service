@@ -44,16 +44,18 @@ export const getRepositoryById = async (id: string, additionalConditions: object
 };
 
 //publish question
-export const publishRepositoryById = async (id: string): Promise<any> => {
-  const questionDeatils = await Repository.update({ status: Status.LIVE }, { where: { identifier: id }, returning: true });
-  return { questionDeatils };
+export const publishRepositoryById = async (id: string, updatedBy: string): Promise<any> => {
+  return await Repository.update({ status: Status.LIVE, updated_by: updatedBy }, { where: { identifier: id }, returning: true });
 };
 
 // Update repository by identifier
 export const updateRepository = async (identifier: string, req: any): Promise<any> => {
   const whereClause: Record<string, any> = { identifier };
   whereClause.is_active = true; // Ensure only active repositories are updated
-  const updateRepository = await Repository.update(req, { where: whereClause });
+  const updateRepository = await Repository.update(req, {
+    where: { identifier },
+    returning: true,
+  });
   return updateRepository;
 };
 
@@ -106,7 +108,7 @@ export const getRepositoryListByIds = async (req: Record<string, any>, repositor
   const status: any = _.get(req, 'status');
   const is_active: any = _.get(req, 'is_active');
 
-  let whereClause: any = {};
+  let whereClause: any = { is_active: true };
 
   if (status) {
     whereClause.status = status;

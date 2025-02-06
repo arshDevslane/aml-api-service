@@ -37,24 +37,9 @@
           "additionalProperties": {
             "type": "string"
           }
-        },
-        "tenant": {
-          "type": "object",
-          "description": "Tenant object with multilingual support, containing a 'name' key with language-specific values",
-          "properties": {
-            "name": {
-              "type": "object",
-              "description": "Multilingual tenant name, key-value pairs where key is the language code",
-              "additionalProperties": {
-                "type": "string"
-              }
-            }
-          },
-          "required": ["name"],
-          "additionalProperties": false
         }
       },
-      "required": ["name", "description", "tenant"],
+      "required": ["name", "description"],
       "additionalProperties": false
     }
   },
