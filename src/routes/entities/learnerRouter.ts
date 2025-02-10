@@ -4,7 +4,6 @@ import learnerProficiencyRouter from './learnerProficiencyRouter';
 import evaluateLearner from '../../controllers/learner/learnerNextStep/evaluateLearner';
 import { setDataToRequestObject } from '../../middlewares/setDataToReqObj';
 import fetchLoggedInLearner from '../../controllers/learner/fetchLoggedInLearner/fetchLoggedInLearner';
-import listLearners from '../../controllers/learnerSearch/learnerSearch';
 
 export const learnerRouter = express.Router();
 
@@ -15,5 +14,3 @@ learnerRouter.use('/proficiency-data', learnerProficiencyRouter);
 learnerRouter.post('/evaluate/:learner_id', evaluateLearner);
 
 learnerRouter.get('/read', setDataToRequestObject('api.learner.read'), fetchLoggedInLearner);
-
-learnerRouter.post('/list', setDataToRequestObject('api.learner.list'), listLearners);
