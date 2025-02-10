@@ -68,6 +68,7 @@ class QuestionSetService {
     filters: {
       is_active?: boolean;
       status?: Status;
+      purpose?: QuestionSetPurposeType;
       search_query?: string;
       repository_id?: string;
       board_id?: string;
@@ -100,6 +101,13 @@ class QuestionSetService {
       whereClause = {
         ...whereClause,
         status: filters.status,
+      };
+    }
+
+    if (filters.purpose) {
+      whereClause = {
+        ...whereClause,
+        purpose: filters.purpose,
       };
     }
 

@@ -43,6 +43,10 @@
               "type": "string",
               "enum": ["draft", "live"]
             },
+            "purpose": {
+              "type": "string",
+              "enum": ["Misconception", "Mixed Practice", "Main Diagnostic", "Worksheet"]
+            },
             "search_query": {
               "type": "string"
             },
