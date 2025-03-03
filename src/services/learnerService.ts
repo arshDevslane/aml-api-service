@@ -51,9 +51,10 @@ class LearnerService {
     return Learner.findAll();
   }
 
-  async updateLearner(id: number, updatedData: { board_id: string | null; class_id: string | null }) {
-    await Learner.update(updatedData, {
-      where: { id },
+  async updateLearner(identifier: number, updatedData: { board_id?: string; class_id?: string; preferred_language?: string }) {
+    return Learner.update(updatedData, {
+      where: { identifier },
+      returning: true,
     });
   }
 
@@ -84,4 +85,5 @@ class LearnerService {
     };
   }
 }
+
 export const learnerService = LearnerService.getInstance();

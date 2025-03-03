@@ -14,6 +14,7 @@ export class Learner extends Model {
   declare section_id: string | null;
   declare created_by: string;
   declare updated_by: string;
+  declare preferred_language: string;
 }
 
 Learner.init(
@@ -68,6 +69,10 @@ Learner.init(
     updated_by: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    preferred_language: {
+      type: DataTypes.STRING,
+      allowNull: false,
     },
   },
   {
