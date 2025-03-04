@@ -11,6 +11,7 @@ export class LearnerTransformer {
       name: learner.name,
       school_id: learner.school_id,
       section_id: learner.section_id,
+      preferred_language: learner.preferred_language,
     };
   }
 

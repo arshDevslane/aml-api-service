@@ -2437,3 +2437,9 @@ ADD CONSTRAINT repository_associations_identifier_unique UNIQUE (identifier);
 ------------------------------------------------------------------
 
 ALTER TABLE learner drop column taxonomy;
+
+------------------------------------------------------------------
+-- Add column preferred_language in learner table --
+------------------------------------------------------------------
+
+ALTER TABLE learner ADD COLUMN preferred_language VARCHAR(255) DEFAULT 'en' not null;
