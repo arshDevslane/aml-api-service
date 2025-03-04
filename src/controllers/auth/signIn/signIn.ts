@@ -14,6 +14,7 @@ import { BOARD_ID_MAPPING, TENANT_ID_MAPPING } from './signin.helper';
 import * as uuid from 'uuid';
 import { LearnerTransformer } from '../../../transformers/entity/learner.transformer';
 import { boardService } from '../../../services/boardService';
+import { supportedLanguages_TTS } from '../../../enums/traslationAndTTS';
 
 const signIn = async (req: Request, res: Response) => {
   const apiId = _.get(req, 'id');
@@ -80,6 +81,7 @@ const signIn = async (req: Request, res: Response) => {
       tenant_id: tenantId,
       board_id: boardId,
       class_id: class_id,
+      preferred_language: supportedLanguages_TTS.en.name,
       created_by: 'sign-in-api',
     });
   }

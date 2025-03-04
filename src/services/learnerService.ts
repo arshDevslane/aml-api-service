@@ -7,7 +7,7 @@ class LearnerService {
     return new LearnerService();
   }
 
-  async create(data: { identifier: string; username: string; password: string; tenant_id: string; board_id: string; class_id: string; created_by: string }) {
+  async create(data: { identifier: string; username: string; password: string; tenant_id: string; board_id: string; class_id: string; created_by: string; preferred_language: string }) {
     return Learner.create(data, { raw: true });
   }
 
