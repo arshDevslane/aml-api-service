@@ -1,5 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import { AppDataSource } from '../config';
+import { supportedLanguages_TTS } from '../enums/traslationAndTTS';
 
 export class Learner extends Model {
   declare id: number;
@@ -73,6 +74,7 @@ Learner.init(
     preferred_language: {
       type: DataTypes.STRING,
       allowNull: false,
+      defaultValue: supportedLanguages_TTS.en.name,
     },
   },
   {

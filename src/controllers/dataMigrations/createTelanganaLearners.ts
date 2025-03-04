@@ -9,6 +9,7 @@ import { Learner } from '../../models/learner';
 import bcrypt from 'bcrypt';
 import * as uuid from 'uuid';
 import { learnerService } from '../../services/learnerService';
+import { supportedLanguages_TTS } from '../../enums/traslationAndTTS';
 
 const createTelanganaLearners = async (req: Request, res: Response) => {
   const csvFile = _.get(req, ['files', 'document'], {});
@@ -58,6 +59,7 @@ const createTelanganaLearners = async (req: Request, res: Response) => {
           class_id: classId,
           tenant_id: tenantId,
           created_by: 'createTelanganaLearners-api',
+          preferred_language: supportedLanguages_TTS.en.name,
         },
         { transaction },
       );
