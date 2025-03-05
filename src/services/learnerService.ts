@@ -11,12 +11,12 @@ class LearnerService {
     return Learner.create(data, { raw: true });
   }
 
-  async getLearnerByUserName(username: string) {
+  async getLearnerByUserName(username: string, raw = false) {
     return Learner.findOne({
       where: {
         username,
       },
-      raw: true,
+      raw,
     });
   }
 

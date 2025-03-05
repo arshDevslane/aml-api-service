@@ -28,7 +28,7 @@ const login = async (req: Request, res: Response) => {
 
   const { username, password } = dataBody;
 
-  const learner = await learnerService.getLearnerByUserName(username);
+  const learner = await learnerService.getLearnerByUserName(username, true);
 
   if (!learner || _.isEmpty(learner)) {
     const code = 'LEARNER_NOT_FOUND';
