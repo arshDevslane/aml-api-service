@@ -16,6 +16,9 @@ const { envPort, applicationEnv } = appConfiguration;
 
 const app: Application = express();
 
+app.set('trust proxy', 1);
+app.get('/ip', (request, response) => response.send(request.ip));
+
 let server: ReturnType<typeof app.listen>;
 
 // Define the error handler
