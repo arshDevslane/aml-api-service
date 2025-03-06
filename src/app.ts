@@ -87,7 +87,7 @@ const initializeServer = (): void => {
 
     const limiter = RateLimit({
       windowMs: 60 * 1000, // 1 minute
-      limit: 1000, // max 1000 requests per windowMs
+      limit: 5000, // max 5000 requests per windowMs
     });
     app.use(limiter);
 
