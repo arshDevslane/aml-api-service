@@ -97,7 +97,6 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
   for (const question of questions) {
     _.set(questionMap, question.identifier, question);
   }
-  const transaction = await AppDataSource.transaction();
 
   const { learnerJourney } = await readLearnerJourneyByLearnerIdAndQuestionSetId(learner_id, questionSetId);
 
@@ -111,10 +110,13 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
   }
 
   const questionLevelBulkCreateData = [];
+  const questionLevelDataUpdatePromises = [];
+
+  const transaction = await AppDataSource.transaction();
 
   try {
     /**
-     * Updating question level data in the following block
+     * DATA ACCUMULATION FOR QUESTION LEVEL DATA STARTS HERE
      */
     logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: updating question level data`);
     for (const datum of questions_data) {
@@ -154,7 +156,7 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
             score,
             updated_by: learner_id,
           };
-          await updateLearnerProficiencyQuestionLevelData(transaction, learnerDataExists.identifier, updateData);
+          questionLevelDataUpdatePromises.push(updateLearnerProficiencyQuestionLevelData(transaction, learnerDataExists.identifier, updateData));
           _.set(newLearnerAttempts, learnerDataExists?.id, { ...learnerDataExists, ...updateData });
         }
         continue;
@@ -173,19 +175,14 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
         created_by: learner_id,
       });
     }
-
-    const newData = await bulkCreateLearnerProficiencyQuestionLevelData(transaction, questionLevelBulkCreateData);
-
-    for (const datum of newData) {
-      _.set(newLearnerAttempts, datum.dataValues.id, datum.dataValues);
-    }
-
-    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: question level data updated`);
+    /**
+     * DATA ACCUMULATION FOR QUESTION LEVEL DATA ENDS HERE
+     */
 
     /**
-     * Updating question set level data in the following block
+     * DATA ACCUMULATION FOR QUESTION SET LEVEL DATA STARTS HERE
      */
-    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: updating question set level data`);
+
     const questionMappings = await questionSetQuestionMappingService.getEntriesForQuestionSetId(questionSet.identifier);
     const totalQuestionsCount = (questionMappings || []).length;
     const pastAttemptedQuestions = learnerJourney && learnerJourney.status === LearnerJourneyStatus.IN_PROGRESS ? learnerJourney.completed_question_ids : [];
@@ -201,6 +198,29 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
       .filter((v) => !!v);
     const allAttemptedQuestionsOfThisQuestionSet = [...unUpdatedExistingAttempts, ...Object.values(newLearnerAttempts)];
 
+    /**
+     * DATA ACCUMULATION FOR QUESTION SET LEVEL DATA ENDS HERE
+     */
+
+    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: creating question level data`);
+    const newData = await bulkCreateLearnerProficiencyQuestionLevelData(transaction, questionLevelBulkCreateData);
+    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: question level data created`);
+
+    if (questionLevelDataUpdatePromises.length) {
+      logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: updating question level data`);
+      await Promise.all(questionLevelDataUpdatePromises);
+      logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: question level data updated`);
+    }
+
+    for (const datum of newData) {
+      _.set(newLearnerAttempts, datum.dataValues.id, datum.dataValues);
+    }
+
+    /**
+     * Updating question set level data in the following block
+     */
+    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: updating question set level data`);
+
     if (totalQuestionsCount === completedQuestionIds.length && totalQuestionsCount > 0) {
       const avgScore = calculateAverageScoreForQuestionSet(allAttemptedQuestionsOfThisQuestionSet);
       const subSkillScores = calculateSubSkillScoresForQuestionSet(allAttemptedQuestionsOfThisQuestionSet);
@@ -215,10 +235,12 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
         attempt_number: attemptNumber,
       });
     }
+    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: question set level data updated`);
 
     /**
      * Updating learner journey
      */
+    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: updating learner journey`);
     const start_time = _.get(questionSetTimestampMap, [questionSet.identifier, 'start_time']);
     const end_time = _.get(questionSetTimestampMap, [questionSet.identifier, 'end_time']);
     const journeyStatus = totalQuestionsCount === completedQuestionIds.length ? LearnerJourneyStatus.COMPLETED : LearnerJourneyStatus.IN_PROGRESS;
@@ -255,7 +277,7 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
       await createLearnerJourney(transaction, payload);
     }
 
-    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: question set level data updated`);
+    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: learner journey updated`);
 
     if (questionSet.purpose === QuestionSetPurposeType.MAIN_DIAGNOSTIC) {
       /**
