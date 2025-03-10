@@ -112,7 +112,10 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
   const questionLevelBulkCreateData = [];
   const questionLevelDataUpdatePromises = [];
 
+  logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} transaction started`);
   const transaction = await AppDataSource.transaction();
+  const transactionStartTime = Date.now();
+  logger.info(`msgid: ${msgid} transactionStartTime: ${transactionStartTime}`);
 
   try {
     /**
@@ -302,11 +305,19 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
       logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: skipped learner data aggregation`);
     }
 
-    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: COMMIT TRANSACTION`);
+    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: COMMITING TRANSACTION`);
     await transaction.commit();
+    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: COMMIT TRANSACTION DONE`);
+    const transactionEndTime = Date.now();
+    logger.info(`transactionEndTime: ${transactionEndTime}`);
+    logger.info(`transaction ran for: ${transactionStartTime - transactionEndTime}`);
   } catch (e: any) {
-    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: ROLLBACK TRANSACTION`);
+    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: ROLLING BACK TRANSACTION`);
     await transaction.rollback();
+    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: ROLLBACK TRANSACTION DONE`);
+    const transactionEndTime = Date.now();
+    logger.info(`msgid: ${msgid} transactionEndTime: ${transactionEndTime}`);
+    logger.info(`msgid: ${msgid} transaction ran for: ${transactionStartTime - transactionEndTime}`);
     apiLog.error_body = JSON.stringify(Object.entries(e));
     await apiLog.save();
     throw e;
