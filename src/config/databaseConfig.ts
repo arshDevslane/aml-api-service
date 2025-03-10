@@ -19,7 +19,7 @@ const AppDataSource = new Sequelize({
     min: minConnections,
     max: maxConnections,
     idle: 5 * 1000, // in ms
-    acquire: 60 * 1000, // in ms
+    acquire: 2 * 60 * 1000, // in ms
   },
 });
 
