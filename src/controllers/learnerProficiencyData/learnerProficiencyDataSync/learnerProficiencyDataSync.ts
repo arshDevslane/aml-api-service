@@ -267,15 +267,17 @@ const learnerProficiencyDataSync = async (req: Request, res: Response) => {
     } else {
       logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: skipped learner data aggregation`);
     }
-
-    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: COMMIT TRANSACTION`);
     await transaction.commit();
+    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: COMMIT TRANSACTION`);    
   } catch (e: any) {
-    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: ROLLBACK TRANSACTION`);
     await transaction.rollback();
+    logger.error(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: ROLLBACK TRANSACTION`);
     apiLog.error_body = JSON.stringify(Object.entries(e));
     await apiLog.save();
     throw e;
+  } finally {
+    //@ts-expect-error no typings
+    AppDataSource.connectionManager.releaseConnection(transaction.connection);
   }
 
   const { learnerJourney: latestLearnerJourney } = await readLearnerJourney(learner_id);
