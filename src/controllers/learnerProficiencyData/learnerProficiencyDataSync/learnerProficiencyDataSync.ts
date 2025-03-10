@@ -60,7 +60,7 @@ const learnerProficiencyDataSync = async (req: Request, res: Response) => {
 
   if (!isRequestValid.isValid) {
     const code = 'LEARNER_PROFICIENCY_DATA_INVALID_INPUT';
-    logger.error({ code, apiId, msgid, resmsgid, requestBody, message: isRequestValid.message });
+    logger.error(`code: ${code}, apiId: ${apiId}, msgid: ${msgid}, resmsgid: ${resmsgid}, message: ${isRequestValid.message}`);
     throw amlError(code, isRequestValid.message, 'BAD_REQUEST', 400);
   }
 
@@ -68,7 +68,7 @@ const learnerProficiencyDataSync = async (req: Request, res: Response) => {
 
   if (learner.identifier !== learner_id) {
     const code = 'LEARNER_DOES_NOT_EXIST';
-    logger.error({ code, apiId, msgid, resmsgid, message: 'Learner does not exist' });
+    logger.error(`code: ${code}, apiId: ${apiId}, msgid: ${msgid}, resmsgid: ${resmsgid}, message: 'Learner does not exist'`);
     throw amlError(code, 'Learner does not exist', 'NOT_FOUND', 404);
   }
 
@@ -110,7 +110,7 @@ const learnerProficiencyDataSync = async (req: Request, res: Response) => {
        * Validating question_id
        */
       if (!question) {
-        logger.error({ apiId, msgid, resmsgid, requestBody, message: `question with identifier ${question_id} not found` });
+        logger.error(`apiId: ${apiId}, msgid: ${msgid}, resmsgid: ${resmsgid}, message: question with identifier ${question_id} not found`);
         continue;
       }
 
