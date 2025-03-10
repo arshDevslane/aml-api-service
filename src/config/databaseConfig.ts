@@ -16,8 +16,10 @@ const AppDataSource = new Sequelize({
   models: [path.join(__dirname, 'models', '*.ts')],
   logging: false,
   pool: {
+    min: 50,
     max: 100,
-    acquire: 60 * 1000,
+    idle: 5 * 1000, // in ms
+    acquire: 60 * 1000, // in ms
   },
 });
 
