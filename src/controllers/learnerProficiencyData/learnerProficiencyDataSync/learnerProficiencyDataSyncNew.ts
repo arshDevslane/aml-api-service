@@ -321,6 +321,9 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
     apiLog.error_body = JSON.stringify(Object.entries(e));
     await apiLog.save();
     throw e;
+  } finally {
+    //@ts-expect-error no typings
+    AppDataSource.connectionManager.releaseConnection(transaction.connection);
   }
 
   const { learnerJourney: latestLearnerJourney } = await readLearnerJourney(learner_id);
