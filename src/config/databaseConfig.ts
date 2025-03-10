@@ -3,7 +3,7 @@ import appConfiguration from './config';
 import path from 'path';
 
 const {
-  DB: { port, name, password, host, user },
+  DB: { port, name, password, host, user, minConnections, maxConnections },
 } = appConfiguration;
 
 const AppDataSource = new Sequelize({
@@ -16,8 +16,8 @@ const AppDataSource = new Sequelize({
   models: [path.join(__dirname, 'models', '*.ts')],
   logging: false,
   pool: {
-    min: 50,
-    max: 100,
+    min: minConnections,
+    max: maxConnections,
     idle: 5 * 1000, // in ms
     acquire: 60 * 1000, // in ms
   },

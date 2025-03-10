@@ -20,6 +20,8 @@ export interface IConfiguration {
     password: string;
     user: string;
     name: string;
+    minConnections: number;
+    maxConnections: number;
   };
   bucketName: string;
   presignedUrlExpiry: number;
