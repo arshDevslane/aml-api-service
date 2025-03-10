@@ -15,6 +15,10 @@ const AppDataSource = new Sequelize({
   database: name,
   models: [path.join(__dirname, 'models', '*.ts')],
   logging: false,
+  pool: {
+    max: 100,
+    acquire: 60 * 1000,
+  },
 });
 
 export const query = async (query: string) => {
