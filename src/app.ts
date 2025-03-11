@@ -86,8 +86,9 @@ const initializeServer = (): void => {
     app.use(cookieParser());
 
     const limiter = RateLimit({
-      windowMs: 60 * 1000, // 1 minute
-      limit: 20000, // max 5000 requests per windowMs
+      windowMs: 30 * 1000, // 30 secs
+      limit: 500000, // max 5000 requests per windowMs
+      message: 'Error from express rate limitor',
     });
     app.use(limiter);
 
