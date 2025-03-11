@@ -209,7 +209,7 @@ export const aggregateLearnerData = async (
     const key = `${curr.class_id}_${curr.l1_skill_id}`;
     agg[key] = curr;
     return agg;
-  });
+  }, {});
   const bulkCreateData = [];
   for (const datum of reqData) {
     const key = `${datum.class_id}_${datum.l1_skill_id}`;
