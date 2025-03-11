@@ -211,11 +211,13 @@ export const aggregateLearnerData = async (
     return agg;
   }, {});
   const bulkCreateData = [];
+  const bulkUpdateData = [];
   for (const datum of reqData) {
     const key = `${datum.class_id}_${datum.l1_skill_id}`;
     const existingEntry = existingEntriesMap[key];
     if (existingEntry) {
-      await updateAggregateData(transaction, existingEntry.identifier, {
+      bulkUpdateData.push({
+        identifier: existingEntry.identifier,
         questions_count: datum.questionsCount,
         sub_skills: datum.sub_skills,
         score: +(datum.total / datum.questionsCount).toFixed(2),
@@ -239,4 +241,7 @@ export const aggregateLearnerData = async (
     });
   }
   await bulkCreateAggregateData(transaction, bulkCreateData);
+  if (bulkUpdateData.length) {
+    await updateAggregateData(transaction, bulkUpdateData);
+  }
 };

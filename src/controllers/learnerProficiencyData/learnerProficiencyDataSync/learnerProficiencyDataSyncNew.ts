@@ -310,7 +310,8 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
 
     logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: learner journey updated`);
 
-    if (questionSet.purpose === QuestionSetPurposeType.MAIN_DIAGNOSTIC) {
+    // aggregating learner data only for MAIN DIAGNOSTIC question sets & only when the question set is completed
+    if (questionSet.purpose === QuestionSetPurposeType.MAIN_DIAGNOSTIC && totalQuestionsCount === completedQuestionIds.length && totalQuestionsCount > 0) {
       /**
        * Updating grade/skill level data in the following block (only for Main Diagnostic Question Set)
        */
