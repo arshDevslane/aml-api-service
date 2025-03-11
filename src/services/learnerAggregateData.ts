@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import { LearnerProficiencyAggregateData } from '../models/learnerProficiencyAggregateData';
 
 export const findAggregateData = async (filters: {
@@ -9,6 +10,24 @@ export const findAggregateData = async (filters: {
 }): Promise<LearnerProficiencyAggregateData | null> => {
   return LearnerProficiencyAggregateData.findOne({
     where: { ...filters },
+    attributes: { exclude: ['id'] },
+    raw: true,
+  });
+};
+
+export const bulkFindAggregateData = async (
+  filterData: {
+    learner_id?: string;
+    class_id?: string;
+    l1_skill_id?: string;
+    l2_skill_id?: string;
+    l3_skill_id?: string;
+  }[],
+) => {
+  return LearnerProficiencyAggregateData.findAll({
+    where: {
+      [Op.or]: filterData,
+    },
     attributes: { exclude: ['id'] },
     raw: true,
   });

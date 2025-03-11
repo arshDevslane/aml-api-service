@@ -1,4 +1,4 @@
-import { bulkCreateAggregateData, findAggregateData, updateAggregateData } from '../../../services/learnerAggregateData';
+import { bulkCreateAggregateData, bulkFindAggregateData, updateAggregateData } from '../../../services/learnerAggregateData';
 import * as _ from 'lodash';
 import * as uuid from 'uuid';
 import { Question } from '../../../models/question';
@@ -203,9 +203,17 @@ export const aggregateLearnerData = async (
   learner: Learner,
   reqData: { class_id: string; l1_skill_id: string; total: number; questionsCount: number; sub_skills: { [skillType: string]: number } }[],
 ) => {
+  const queryData = reqData.map((datum) => ({ learner_id: learner.identifier, class_id: datum.class_id, l1_skill_id: datum.l1_skill_id }));
+  const existingEntries = await bulkFindAggregateData(queryData);
+  const existingEntriesMap: any = existingEntries.reduce((agg: any, curr) => {
+    const key = `${curr.class_id}_${curr.l1_skill_id}`;
+    agg[key] = curr;
+    return agg;
+  });
   const bulkCreateData = [];
   for (const datum of reqData) {
-    const existingEntry = await findAggregateData({ learner_id: learner.identifier, class_id: datum.class_id, l1_skill_id: datum.l1_skill_id });
+    const key = `${datum.class_id}_${datum.l1_skill_id}`;
+    const existingEntry = existingEntriesMap[key];
     if (existingEntry) {
       await updateAggregateData(transaction, existingEntry.identifier, {
         questions_count: datum.questionsCount,
