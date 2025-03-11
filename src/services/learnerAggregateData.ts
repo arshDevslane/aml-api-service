@@ -63,7 +63,7 @@ export const updateAggregateData = async (transaction: any, data: { identifier: 
       WHERE t.identifier = uv.identifier
     `;
 
-    return await LearnerProficiencyAggregateData.sequelize?.query(query, {
+    return LearnerProficiencyAggregateData.sequelize?.query(query, {
       transaction,
       type: QueryTypes.UPDATE,
     });

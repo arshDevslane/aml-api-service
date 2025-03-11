@@ -1,4 +1,4 @@
-import { Optional, Op } from 'sequelize';
+import { Optional, Op, QueryTypes } from 'sequelize';
 import { LearnerProficiencyQuestionLevelData } from '../models/learnerProficiencyQuestionLevelData';
 import { LearnerProficiencyAggregateData } from '../models/learnerProficiencyAggregateData';
 import { LearnerProficiencyQuestionSetLevelData } from '../models/learnerProficiencyQuestionSetLevelData';
@@ -52,13 +52,50 @@ export const bulkCreateLearnerProficiencyQuestionLevelData = async (transaction:
   return LearnerProficiencyQuestionLevelData.bulkCreate(req, { transaction });
 };
 
-export const updateLearnerProficiencyQuestionLevelData = async (transaction: any, identifier: string, req: any): Promise<any> => {
-  const whereClause: Record<string, any> = { identifier };
-  const updatedLearnerData = await LearnerProficiencyQuestionLevelData.update(req, {
-    where: whereClause,
+// export const updateLearnerProficiencyQuestionLevelData = async (transaction: any, identifier: string, req: any): Promise<any> => {
+//   const whereClause: Record<string, any> = { identifier };
+//   const updatedLearnerData = await LearnerProficiencyQuestionLevelData.update(req, {
+//     where: whereClause,
+//     transaction,
+//   });
+//   return { updatedLearnerData };
+// };
+
+export const updateLearnerProficiencyQuestionLevelData = async (transaction: any, data: { identifier: string; [key: string]: any } | { identifier: string; [key: string]: any }[]): Promise<any> => {
+  if (Array.isArray(data)) {
+    const values = data
+      .map(
+        (item) =>
+          `'${item.identifier}', ` + `'${JSON.stringify(item.learner_response)}'::jsonb, ` + `'${JSON.stringify(item.sub_skills)}'::jsonb, ` + `${item.score}, ` + `'${item.updated_by}', ` + `NOW()`,
+      )
+      .join(', ');
+
+    const query = `
+      WITH updated_values (identifier, learner_response, sub_skills, score, updated_by, updated_at) AS (
+        VALUES (${values})
+      )
+      UPDATE learner_proficiency_question_level_data AS t 
+      SET
+        learner_response = uv.learner_response,
+        sub_skills = uv.sub_skills,
+        score = uv.score,
+        updated_by = uv.updated_by,
+        updated_at = uv.updated_at
+      FROM updated_values uv
+      WHERE t.identifier = uv.identifier
+    `;
+
+    return LearnerProficiencyQuestionLevelData.sequelize?.query(query, {
+      transaction,
+      type: QueryTypes.UPDATE,
+    });
+  }
+  // Single update (maintaining backward compatibility)
+  const { identifier, ...updateData } = data;
+  return LearnerProficiencyQuestionLevelData.update(updateData, {
+    where: { identifier },
     transaction,
   });
-  return { updatedLearnerData };
 };
 
 export const readLearnerAggregateData = async (learnerId: string): Promise<{ learnerAggregateData: LearnerProficiencyAggregateData[] }> => {

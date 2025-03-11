@@ -110,7 +110,7 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
   }
 
   const questionLevelBulkCreateData = [];
-  const questionLevelDataUpdatePromises = [];
+  const questionLevelBulkUpdateData = [];
 
   const queryData = questions_data.map((datum: any) => ({
     learnerId: learner_id,
@@ -127,119 +127,120 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
     return agg;
   }, {});
 
+  /**
+   * DATA ACCUMULATION FOR QUESTION LEVEL DATA STARTS HERE
+   */
+  logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: updating question level data`);
+  for (const datum of questions_data) {
+    const { question_id, question_set_id, start_time, end_time, status } = datum;
+    const learner_response = datum.learner_response as { result: string; answerTop?: string };
+    const question = _.get(questionMap, question_id, undefined);
+
+    /**
+     * Validating question_id
+     */
+    if (!question) {
+      logger.error(`apiId: ${apiId}, msgid: ${msgid}, resmsgid: ${resmsgid}, message: question with identifier ${question_id} not found`);
+      continue;
+    }
+
+    const score = getScoreForTheQuestion(question, learner_response);
+
+    const subSkillScores = calculateSubSkillScoresForQuestion(question, learner_response);
+
+    if (start_time && moment(start_time).isValid()) {
+      questionSetTimestampMap = {
+        ...questionSetTimestampMap,
+        [question_set_id]: {
+          ...(questionSetTimestampMap[question_set_id] || {}),
+          start_time,
+        },
+      };
+    }
+
+    if (end_time && moment(end_time).isValid()) {
+      questionSetTimestampMap = {
+        ...questionSetTimestampMap,
+        [question_set_id]: {
+          ...(questionSetTimestampMap[question_set_id] || {}),
+          end_time,
+        },
+      };
+    }
+
+    /**
+     * If an entry already exists for the (learner_id, question_id, question_set_id) pair, then we increment the attempt count & update the new values
+     */
+    const key = `${question_id}_${question_set_id}_${attemptNumber}`;
+    const learnerDataExists = existingAttemptsMap[key];
+    if (learnerDataExists && !_.isEmpty(learnerDataExists)) {
+      if (status === QuestionStatus.REVISITED) {
+        const updateData = {
+          identifier: learnerDataExists.identifier,
+          learner_response,
+          sub_skills: subSkillScores,
+          score,
+          updated_by: learner_id,
+        };
+        questionLevelBulkUpdateData.push(updateData);
+        newLearnerAttempts[learnerDataExists.id] = { ...learnerDataExists, ...updateData };
+      }
+      continue;
+    }
+
+    questionLevelBulkCreateData.push({
+      identifier: uuid.v4(),
+      learner_id,
+      question_id,
+      question_set_id,
+      taxonomy: question.taxonomy,
+      sub_skills: subSkillScores,
+      learner_response,
+      score,
+      attempt_number: attemptNumber,
+      created_by: learner_id,
+    });
+  }
+  /**
+   * DATA ACCUMULATION FOR QUESTION LEVEL DATA ENDS HERE
+   */
+
+  /**
+   * DATA ACCUMULATION FOR QUESTION SET LEVEL DATA STARTS HERE
+   */
+
+  const questionMappings = await questionSetQuestionMappingService.getEntriesForQuestionSetId(questionSet.identifier);
+  const totalQuestionsCount = (questionMappings || []).length;
+  const pastAttemptedQuestions = learnerJourney && learnerJourney.status === LearnerJourneyStatus.IN_PROGRESS ? learnerJourney.completed_question_ids : [];
+  const completedQuestionIds = _.uniq([...pastAttemptedQuestions, ...questionIds]);
+  const pastLearnerAttempts = await getRecordsForLearnerByQuestionSetId(learner_id, questionSet.identifier, attemptNumber);
+  const unUpdatedExistingAttempts = pastLearnerAttempts
+    .map((attempt) => {
+      if (Object.prototype.hasOwnProperty.call(newLearnerAttempts, attempt.id)) {
+        return undefined;
+      }
+      return attempt;
+    })
+    .filter((v) => !!v);
+  const allAttemptedQuestionsOfThisQuestionSet = [...unUpdatedExistingAttempts, ...Object.values(newLearnerAttempts)];
+
+  /**
+   * DATA ACCUMULATION FOR QUESTION SET LEVEL DATA ENDS HERE
+   */
+
   logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} transaction started`);
   const transaction = await AppDataSource.transaction();
   const transactionStartTime = Date.now();
   logger.info(`msgid: ${msgid} transactionStartTime: ${transactionStartTime}`);
 
   try {
-    /**
-     * DATA ACCUMULATION FOR QUESTION LEVEL DATA STARTS HERE
-     */
-    logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: updating question level data`);
-    for (const datum of questions_data) {
-      const { question_id, question_set_id, start_time, end_time, status } = datum;
-      const learner_response = datum.learner_response as { result: string; answerTop?: string };
-      const question = _.get(questionMap, question_id, undefined);
-
-      /**
-       * Validating question_id
-       */
-      if (!question) {
-        logger.error(`apiId: ${apiId}, msgid: ${msgid}, resmsgid: ${resmsgid}, message: question with identifier ${question_id} not found`);
-        continue;
-      }
-
-      const score = getScoreForTheQuestion(question, learner_response);
-
-      const subSkillScores = calculateSubSkillScoresForQuestion(question, learner_response);
-
-      if (start_time && moment(start_time).isValid()) {
-        questionSetTimestampMap = {
-          ...questionSetTimestampMap,
-          [question_set_id]: {
-            ...(questionSetTimestampMap[question_set_id] || {}),
-            start_time,
-          },
-        };
-      }
-
-      if (end_time && moment(end_time).isValid()) {
-        questionSetTimestampMap = {
-          ...questionSetTimestampMap,
-          [question_set_id]: {
-            ...(questionSetTimestampMap[question_set_id] || {}),
-            end_time,
-          },
-        };
-      }
-
-      /**
-       * If an entry already exists for the (learner_id, question_id, question_set_id) pair, then we increment the attempt count & update the new values
-       */
-      const key = `${question_id}_${question_set_id}_${attemptNumber}`;
-      const learnerDataExists = existingAttemptsMap[key];
-      if (learnerDataExists && !_.isEmpty(learnerDataExists)) {
-        if (status === QuestionStatus.REVISITED) {
-          const updateData = {
-            learner_response,
-            sub_skills: subSkillScores,
-            score,
-            updated_by: learner_id,
-          };
-          questionLevelDataUpdatePromises.push(updateLearnerProficiencyQuestionLevelData(transaction, learnerDataExists.identifier, updateData));
-          newLearnerAttempts[learnerDataExists.id] = { ...learnerDataExists, ...updateData };
-        }
-        continue;
-      }
-
-      questionLevelBulkCreateData.push({
-        identifier: uuid.v4(),
-        learner_id,
-        question_id,
-        question_set_id,
-        taxonomy: question.taxonomy,
-        sub_skills: subSkillScores,
-        learner_response,
-        score,
-        attempt_number: attemptNumber,
-        created_by: learner_id,
-      });
-    }
-    /**
-     * DATA ACCUMULATION FOR QUESTION LEVEL DATA ENDS HERE
-     */
-
-    /**
-     * DATA ACCUMULATION FOR QUESTION SET LEVEL DATA STARTS HERE
-     */
-
-    const questionMappings = await questionSetQuestionMappingService.getEntriesForQuestionSetId(questionSet.identifier);
-    const totalQuestionsCount = (questionMappings || []).length;
-    const pastAttemptedQuestions = learnerJourney && learnerJourney.status === LearnerJourneyStatus.IN_PROGRESS ? learnerJourney.completed_question_ids : [];
-    const completedQuestionIds = _.uniq([...pastAttemptedQuestions, ...questionIds]);
-    const pastLearnerAttempts = await getRecordsForLearnerByQuestionSetId(learner_id, questionSet.identifier, attemptNumber);
-    const unUpdatedExistingAttempts = pastLearnerAttempts
-      .map((attempt) => {
-        if (Object.prototype.hasOwnProperty.call(newLearnerAttempts, attempt.id)) {
-          return undefined;
-        }
-        return attempt;
-      })
-      .filter((v) => !!v);
-    const allAttemptedQuestionsOfThisQuestionSet = [...unUpdatedExistingAttempts, ...Object.values(newLearnerAttempts)];
-
-    /**
-     * DATA ACCUMULATION FOR QUESTION SET LEVEL DATA ENDS HERE
-     */
-
     logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: creating question level data`);
     const newData = await bulkCreateLearnerProficiencyQuestionLevelData(transaction, questionLevelBulkCreateData);
     logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: question level data created`);
 
-    if (questionLevelDataUpdatePromises.length) {
+    if (questionLevelBulkUpdateData.length) {
       logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: updating question level data`);
-      await Promise.all(questionLevelDataUpdatePromises);
+      await updateLearnerProficiencyQuestionLevelData(transaction, questionLevelBulkUpdateData);
       logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: question level data updated`);
     }
 

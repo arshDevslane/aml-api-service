@@ -134,12 +134,13 @@ const learnerProficiencyDataSync = async (req: Request, res: Response) => {
       if (learnerDataExists && !_.isEmpty(learnerDataExists)) {
         if (status === QuestionStatus.REVISITED) {
           const updateData = {
+            identifier: learnerDataExists.identifier,
             learner_response,
             sub_skills: subSkillScores,
             score,
             updated_by: learner_id,
           };
-          await updateLearnerProficiencyQuestionLevelData(transaction, learnerDataExists.identifier, updateData);
+          await updateLearnerProficiencyQuestionLevelData(transaction, updateData);
           _.set(newLearnerAttempts, learnerDataExists?.id, { ...learnerDataExists, ...updateData });
           continue;
         } else {
