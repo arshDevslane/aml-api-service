@@ -73,7 +73,7 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
   }
 
   const questionMap: any = {};
-  const questionSetTimestampMap: { [id: string]: { start_time?: string; end_time?: string } } = {};
+  let questionSetTimestampMap: { [id: string]: { start_time?: string; end_time?: string } } = {};
 
   /**
    * DB QUERIES
@@ -155,11 +155,23 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
       const subSkillScores = calculateSubSkillScoresForQuestion(question, learner_response);
 
       if (start_time && moment(start_time).isValid()) {
-        questionSetTimestampMap[question_set_id]['start_time'] = start_time;
+        questionSetTimestampMap = {
+          ...questionSetTimestampMap,
+          [question_set_id]: {
+            ...(questionSetTimestampMap[question_set_id] || {}),
+            start_time,
+          },
+        };
       }
 
       if (end_time && moment(end_time).isValid()) {
-        questionSetTimestampMap[question_set_id]['end_time'] = end_time;
+        questionSetTimestampMap = {
+          ...questionSetTimestampMap,
+          [question_set_id]: {
+            ...(questionSetTimestampMap[question_set_id] || {}),
+            end_time,
+          },
+        };
       }
 
       /**
