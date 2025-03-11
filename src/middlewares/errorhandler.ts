@@ -5,6 +5,6 @@ import { AmlError } from '../types/amlError';
 import logger from '../utils/logger';
 
 export const amlErrorHandler = (amlErr: AmlError, req: Request, res: Response, _next: NextFunction) => {
-  logger.error({ apiId: _.get(req, 'id'), resmsgid: _.get(res, 'resmsgid'), ...amlErr });
+  logger.error(JSON.stringify({ apiId: _.get(req, 'id'), resmsgid: _.get(res, 'resmsgid'), ...amlErr }));
   ResponseHandler.amlErrorResponse(amlErr, req, res);
 };

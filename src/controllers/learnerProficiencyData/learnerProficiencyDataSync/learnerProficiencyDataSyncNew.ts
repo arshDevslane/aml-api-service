@@ -113,12 +113,7 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
   const questionLevelDataUpdatePromises = [];
 
   logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} transaction started`);
-  // const transaction = await AppDataSource.transaction();
-  const connection = AppDataSource.connectionManager.getConnection({
-    type: 'write',
-  });
-  //@ts-expect-error no typings
-  const transaction = await connection.transaction();
+  const transaction = await AppDataSource.transaction();
   const transactionStartTime = Date.now();
   logger.info(`msgid: ${msgid} transactionStartTime: ${transactionStartTime}`);
 
@@ -327,7 +322,8 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
     await apiLog.save();
     throw e;
   } finally {
-    AppDataSource.connectionManager.releaseConnection(connection);
+    //@ts-expect-error no typings
+    AppDataSource.connectionManager.releaseConnection(transaction.connection);
   }
 
   const { learnerJourney: latestLearnerJourney } = await readLearnerJourney(learner_id);

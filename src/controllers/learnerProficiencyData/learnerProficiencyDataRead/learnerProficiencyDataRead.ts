@@ -14,7 +14,7 @@ const learnerProficiencyDataRead = async (req: Request, res: Response) => {
 
   if (learner.identifier !== learner_id) {
     const code = 'LEARNER_DOES_NOT_EXIST';
-    logger.error({ code, apiId, message: 'Learner does not exist' });
+    logger.error(JSON.stringify({ code, apiId, message: 'Learner does not exist' }));
     throw amlError(code, 'Learner does not exist', 'NOT_FOUND', 404);
   }
 
