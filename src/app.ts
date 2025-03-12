@@ -110,9 +110,13 @@ const initializeServer = (): void => {
     });
 
     // Start the server
-    app.listen(envPort, () => {
+    const server = app.listen(envPort, () => {
       logger.info(`Listening on port. ${envPort}`);
     });
+
+    server.maxConnections = 5000;
+    server.keepAliveTimeout = 60000;
+    server.headersTimeout = 65000;
 
     // Register cron jobs
     cronProvider.register();
