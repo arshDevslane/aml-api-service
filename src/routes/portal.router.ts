@@ -4,7 +4,7 @@ import { learnerAuthRouter } from './learnerAuth.route';
 import { learnerRouter } from './entities/learnerRouter';
 import express from 'express';
 import session from 'express-session';
-import { appConfiguration, AppDataSource } from '../config';
+import { appConfiguration } from '../config';
 import pg from 'pg';
 import ConnectPgSimple from 'connect-pg-simple';
 import csrf from 'csurf';
@@ -14,26 +14,19 @@ import classRouter from './entities/classRouter';
 
 export const portalRouter = express.Router();
 
-// AppDataSource.connectionManager.pool
+const {
+  DB: { port, name, password, host, user, maxConnections },
+} = appConfiguration;
 
-// PostgreSQL connection
-// const pgPool = new pg.Pool({
-//   // @ts-expect-error no typings
-//   ...AppDataSource.connectionManager.pool.options,
-//   // @ts-expect-error no typings
-//   Client: AppDataSource.connectionManager.lib.Client,
-// });
-// @ts-expect-error no typings
-const sequelizePoolConfig = AppDataSource.connectionManager.pool.options;
 const pgPool = new pg.Pool({
-  user: sequelizePoolConfig.username,
-  host: sequelizePoolConfig.host,
-  database: sequelizePoolConfig.database,
-  password: sequelizePoolConfig.password,
-  port: sequelizePoolConfig.port,
-  max: sequelizePoolConfig.max ? Math.floor(sequelizePoolConfig.max * 0.2) : 10, // Adjust pool size if needed
-  idleTimeoutMillis: sequelizePoolConfig.idle || 10000,
-  connectionTimeoutMillis: sequelizePoolConfig.acquire || 60000,
+  user,
+  host,
+  database: name,
+  password,
+  port,
+  max: Math.floor(maxConnections * 40), // Adjust pool size if needed
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 60000,
 });
 
 const PgSession = ConnectPgSimple(session);
