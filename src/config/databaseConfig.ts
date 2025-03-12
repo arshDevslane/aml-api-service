@@ -24,7 +24,7 @@ const AppDataSource = new Sequelize({
   },
 });
 
-await (async () => {
+(async () => {
   logger.info('Connection initiated');
   try {
     await AppDataSource.authenticate();
@@ -32,7 +32,11 @@ await (async () => {
   } catch (error) {
     logger.error('Database connection failed:', error);
   }
-})();
+})().then(() => {
+  logger.info('Promise resolved successfully');
+}).catch(() => {
+  logger.info('Promise failed');
+});
 
 export const query = async (query: string) => {
   const [results, metadata] = await AppDataSource.query(query);
