@@ -305,7 +305,11 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
     logger.info(`transaction ran for: ${transactionEndTime - transactionStartTime}`);
   } catch (e: any) {
     logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: ROLLING BACK TRANSACTION`);
-    await transaction.rollback();
+    // @ts-expect-error no typings
+    if (transaction.finished !== 'commit') {
+      await transaction.rollback();
+    }
+    // await transaction.rollback();
     logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: ROLLBACK TRANSACTION DONE`);
     const transactionEndTime = Date.now();
     logger.info(`msgid: ${msgid} transactionEndTime: ${transactionEndTime}`);
@@ -316,6 +320,8 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
   } finally {
     //@ts-expect-error no typings
     AppDataSource.connectionManager.releaseConnection(transaction.connection);
+    // @ts-expect-error no typings
+    await transaction.cleanup();
   }
 
   const { learnerJourney: latestLearnerJourney } = await readLearnerJourney(learner_id);
