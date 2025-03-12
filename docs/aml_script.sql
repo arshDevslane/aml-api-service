@@ -2443,3 +2443,12 @@ ALTER TABLE learner drop column taxonomy;
 ------------------------------------------------------------------
 
 ALTER TABLE learner ADD COLUMN preferred_language VARCHAR(255) DEFAULT 'en' not null;
+
+
+ALTER TABLE learner_sessions RENAME COLUMN expire TO expires;
+ALTER TABLE learner_sessions RENAME COLUMN sess TO data;
+ALTER TABLE learner_sessions ALTER COLUMN data TYPE TEXT USING data::text;
+ALTER TABLE learner_sessions ALTER COLUMN data SET NOT NULL;
+ALTER TABLE learner_sessions ADD COLUMN created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW();
+ALTER TABLE learner_sessions ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW();
+

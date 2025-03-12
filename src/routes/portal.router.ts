@@ -4,40 +4,30 @@ import { learnerAuthRouter } from './learnerAuth.route';
 import { learnerRouter } from './entities/learnerRouter';
 import express from 'express';
 import session from 'express-session';
-import { appConfiguration } from '../config';
-import pg from 'pg';
-import ConnectPgSimple from 'connect-pg-simple';
+import { appConfiguration, AppDataSource } from '../config';
 import csrf from 'csurf';
 import { learnerAuth } from '../middlewares/learnerAuth';
 import ttsRouter from './entities/ttsRouter';
 import classRouter from './entities/classRouter';
+import SequelizeStore from 'connect-session-sequelize';
 
 export const portalRouter = express.Router();
 
-const {
-  DB: { port, name, password, host, user, maxConnections },
-} = appConfiguration;
-
-const pgPool = new pg.Pool({
-  user,
-  host,
-  database: name,
-  password,
-  port,
-  min: Math.floor(maxConnections * 0.4 * 0.1),
-  max: Math.floor(maxConnections * 0.4), // Adjust pool size if needed
-  idleTimeoutMillis: 10000,
-  connectionTimeoutMillis: 60000,
+// ✅ Initialize Sequelize Session Store
+const SessionStore = SequelizeStore(session.Store);
+const sequelizeSessionStore = new SessionStore({
+  db: AppDataSource, // ✅ Use Sequelize's instance
+  tableName: 'learner_sessions', // ✅ Custom table for storing sessions
+  checkExpirationInterval: 15 * 60 * 1000, // ✅ Cleanup expired sessions every 15 mins
+  expiration: 24 * 60 * 60 * 1000, // ✅ Sessions expire after 24 hours
 });
 
-const PgSession = ConnectPgSimple(session);
+// ✅ Sync session store with the database
+sequelizeSessionStore.sync();
 
 portalRouter.use(
   session({
-    store: new PgSession({
-      pool: pgPool, // Connection pool
-      tableName: 'learner_sessions', // Using a specific table for session storage
-    }),
+    store: sequelizeSessionStore,
     secret: appConfiguration.appSecret, // Use a strong secret in production
     resave: false,
     saveUninitialized: false,
