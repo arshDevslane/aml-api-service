@@ -17,12 +17,25 @@ export const portalRouter = express.Router();
 // AppDataSource.connectionManager.pool
 
 // PostgreSQL connection
+// const pgPool = new pg.Pool({
+//   // @ts-expect-error no typings
+//   ...AppDataSource.connectionManager.pool.options,
+//   // @ts-expect-error no typings
+//   Client: AppDataSource.connectionManager.lib.Client,
+// });
+// @ts-expect-error no typings
+const sequelizePoolConfig = AppDataSource.connectionManager.pool.options;
 const pgPool = new pg.Pool({
-  // @ts-expect-error no typings
-  ...AppDataSource.connectionManager.pool.options,
-  // @ts-expect-error no typings
-  Client: AppDataSource.connectionManager.lib.Client,
+  user: sequelizePoolConfig.username,
+  host: sequelizePoolConfig.host,
+  database: sequelizePoolConfig.database,
+  password: sequelizePoolConfig.password,
+  port: sequelizePoolConfig.port,
+  max: sequelizePoolConfig.max ? Math.floor(sequelizePoolConfig.max * 0.2) : 10, // Adjust pool size if needed
+  idleTimeoutMillis: sequelizePoolConfig.idle || 10000,
+  connectionTimeoutMillis: sequelizePoolConfig.acquire || 60000,
 });
+
 const PgSession = ConnectPgSimple(session);
 
 portalRouter.use(
