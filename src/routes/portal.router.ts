@@ -4,8 +4,8 @@ import { learnerAuthRouter } from './learnerAuth.route';
 import { learnerRouter } from './entities/learnerRouter';
 import express from 'express';
 import session from 'express-session';
-import { appConfiguration } from '../config';
-import pg from 'pg';
+import { appConfiguration, AppDataSource } from '../config';
+// import pg from 'pg';
 import ConnectPgSimple from 'connect-pg-simple';
 import csrf from 'csurf';
 import { learnerAuth } from '../middlewares/learnerAuth';
@@ -14,20 +14,23 @@ import classRouter from './entities/classRouter';
 
 export const portalRouter = express.Router();
 
+// AppDataSource.connectionManager.pool
+
 // PostgreSQL connection
-const pgPool = new pg.Pool({
-  user: process.env.AML_SERVICE_DB_USER,
-  host: process.env.AML_SERVICE_DB_HOST,
-  database: process.env.AML_SERVICE_DB_NAME,
-  password: process.env.AML_SERVICE_DB_PASS,
-  port: 5432,
-});
+// const pgPool = new pg.Pool({
+//   user: process.env.AML_SERVICE_DB_USER,
+//   host: process.env.AML_SERVICE_DB_HOST,
+//   database: process.env.AML_SERVICE_DB_NAME,
+//   password: process.env.AML_SERVICE_DB_PASS,
+//   port: 5432,
+// });
 const PgSession = ConnectPgSimple(session);
 
 portalRouter.use(
   session({
     store: new PgSession({
-      pool: pgPool, // Connection pool
+      // @ts-expect-error no typings
+      pool: AppDataSource.connectionManager.pool, // Connection pool
       tableName: 'learner_sessions', // Using a specific table for session storage
     }),
     secret: appConfiguration.appSecret, // Use a strong secret in production
