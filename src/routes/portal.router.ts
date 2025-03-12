@@ -24,7 +24,8 @@ const pgPool = new pg.Pool({
   database: name,
   password,
   port,
-  max: Math.floor(maxConnections * 40), // Adjust pool size if needed
+  min: Math.floor(maxConnections * 0.4 * 0.1),
+  max: Math.floor(maxConnections * 0.4), // Adjust pool size if needed
   idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 60000,
 });

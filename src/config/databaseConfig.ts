@@ -18,7 +18,7 @@ const AppDataSource = new Sequelize({
   logging: false,
   pool: {
     min: minConnections,
-    max: Math.floor(maxConnections * 60),
+    max: Math.floor(maxConnections * 0.6),
     idle: 500, // in ms
     acquire: 2 * 60 * 1000, // in ms
   },
