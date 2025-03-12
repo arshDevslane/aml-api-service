@@ -294,10 +294,6 @@ const learnerProficiencyDataSyncNew = async (req: Request, res: Response) => {
       }
 
       logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: learner journey updated`);
-
-      logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: COMMITING TRANSACTION`);
-      await transaction.commit();
-      logger.info(`[learnerProficiencyDataSync] msgid: ${msgid} timestamp: ${moment().format('DD-MM-YYYY hh:mm:ss')} action: COMMIT TRANSACTION DONE`);
       const transactionEndTime = Date.now();
       logger.info(`transactionEndTime: ${transactionEndTime}`);
       logger.info(`transaction ran for: ${transactionEndTime - transactionStartTime}`);
