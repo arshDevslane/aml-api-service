@@ -117,6 +117,7 @@ const initializeServer = (): void => {
     server.maxConnections = 5000;
     server.keepAliveTimeout = 60000;
     server.headersTimeout = 65000;
+    server.timeout = 120000;
 
     // Register cron jobs
     cronProvider.register();
