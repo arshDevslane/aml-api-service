@@ -7,7 +7,7 @@ import { router } from './routes/router';
 import { amlErrorHandler } from './middlewares/errorhandler';
 import cookieParser from 'cookie-parser';
 import path from 'path';
-import RateLimit from 'express-rate-limit';
+// import RateLimit from 'express-rate-limit';
 import { cronProvider } from './providers/cron.provider';
 import { AppEnv } from './enums/appEnv';
 import fileUpload from 'express-fileupload';
@@ -85,12 +85,12 @@ const initializeServer = (): void => {
     // Use cookie-parser middleware
     app.use(cookieParser());
 
-    const limiter = RateLimit({
-      windowMs: 30 * 1000, // 30 secs
-      limit: 500000, // max 5000 requests per windowMs
-      message: 'Error from express rate limitor',
-    });
-    app.use(limiter);
+    // const limiter = RateLimit({
+    //   windowMs: 30 * 1000, // 30 secs
+    //   limit: 500000, // max 5000 requests per windowMs
+    //   message: 'Error from express rate limitor',
+    // });
+    // app.use(limiter);
 
     // static route
     app.use(express.static(path.join(__dirname, 'dist')));
