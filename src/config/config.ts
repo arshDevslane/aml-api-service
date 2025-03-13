@@ -25,6 +25,7 @@ const appConfiguration: IConfiguration = {
     user: get(envVars, 'AML_SERVICE_DB_USER', 'postgres'),
     minConnections: +get(envVars, 'AML_SERVICE_MIN_DB_CONNECTIONS', '50'),
     maxConnections: +get(envVars, 'AML_SERVICE_MAX_DB_CONNECTIONS', '100'),
+    readReplica: get(envVars, 'AML_RDS_READ_REPLICA'),
   },
   bucketName: get(envVars, 'BUCKET_NAME', 'dummyBucket'),
   presignedUrlExpiry: get(envVars, 'AWS_EXPIRY_TIME', 1800) as number,

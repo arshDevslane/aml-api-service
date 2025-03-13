@@ -4,16 +4,29 @@ import path from 'path';
 import logger from '../utils/logger';
 
 const {
-  DB: { port, name, password, host, user, minConnections, maxConnections },
+  DB: { port, name, password, host, user, minConnections, maxConnections, readReplica },
 } = appConfiguration;
 
 const AppDataSource = new Sequelize({
   dialect: 'postgres',
-  host: host,
-  port: port,
-  username: user,
-  password: password,
-  database: name,
+  replication: {
+    write: {
+      host: host,
+      port: port,
+      username: user,
+      password: password,
+      database: name,
+    },
+    read: [
+      {
+        host: readReplica,
+        port: port,
+        username: user,
+        password: password,
+        database: name,
+      },
+    ]
+  },
   models: [path.join(__dirname, 'models', '*.ts')],
   logging: false,
   pool: {

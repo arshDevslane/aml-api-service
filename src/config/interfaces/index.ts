@@ -22,6 +22,7 @@ export interface IConfiguration {
     name: string;
     minConnections: number;
     maxConnections: number;
+    readReplica?: string;
   };
   bucketName: string;
   presignedUrlExpiry: number;
