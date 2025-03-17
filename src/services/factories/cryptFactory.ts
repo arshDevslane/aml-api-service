@@ -1,7 +1,6 @@
 import cryptoJs from 'crypto-js';
 
 class CryptFactory {
-
   public static getInstance(): CryptFactory {
     return new CryptFactory();
   }
