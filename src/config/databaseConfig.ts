@@ -7,16 +7,19 @@ const {
   DB: { port, name, password, host, user, minConnections, maxConnections, readReplica },
 } = appConfiguration;
 
-const AppDataSource = new Sequelize({
-  dialect: 'postgres',
-  replication: {
-    write: {
-      host: host,
-      port: port,
-      username: user,
-      password: password,
-      database: name,
-    },
+let replication: any = {
+  write: {
+    host: host,
+    port: port,
+    username: user,
+    password: password,
+    database: name,
+  },
+};
+
+if (readReplica) {
+  replication = {
+    ...replication,
     read: [
       {
         host: readReplica,
@@ -26,12 +29,17 @@ const AppDataSource = new Sequelize({
         database: name,
       },
     ],
-  },
+  };
+}
+
+const AppDataSource = new Sequelize({
+  dialect: 'postgres',
+  replication,
   models: [path.join(__dirname, 'models', '*.ts')],
   logging: false,
   pool: {
     min: minConnections,
-    max: Math.floor(maxConnections * 0.6),
+    max: maxConnections,
     idle: 500, // in ms
     acquire: 2 * 60 * 1000, // in ms
   },
