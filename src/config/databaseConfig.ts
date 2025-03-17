@@ -1,4 +1,4 @@
-import { Sequelize } from 'sequelize-typescript';
+import { Sequelize, SequelizeOptions } from 'sequelize-typescript';
 import appConfiguration from './config';
 import path from 'path';
 import logger from '../utils/logger';
@@ -7,34 +7,9 @@ const {
   DB: { port, name, password, host, user, minConnections, maxConnections, readReplica },
 } = appConfiguration;
 
-let replication: any = {
-  write: {
-    host: host,
-    port: port,
-    username: user,
-    password: password,
-    database: name,
-  },
-};
-
-if (readReplica) {
-  replication = {
-    ...replication,
-    read: [
-      {
-        host: readReplica,
-        port: port,
-        username: user,
-        password: password,
-        database: name,
-      },
-    ],
-  };
-}
-
-const AppDataSource = new Sequelize({
+// general config values
+let config: SequelizeOptions = {
   dialect: 'postgres',
-  replication,
   models: [path.join(__dirname, 'models', '*.ts')],
   logging: false,
   pool: {
@@ -43,7 +18,42 @@ const AppDataSource = new Sequelize({
     idle: 500, // in ms
     acquire: 2 * 60 * 1000, // in ms
   },
-});
+};
+
+if (readReplica) {
+  config = {
+    ...config,
+    replication: {
+      write: {
+        host: host,
+        port: port,
+        username: user,
+        password: password,
+        database: name,
+      },
+      read: [
+        {
+          host: readReplica,
+          port: port,
+          username: user,
+          password: password,
+          database: name,
+        },
+      ],
+    },
+  };
+} else {
+  config = {
+    ...config,
+    host,
+    port,
+    username: user,
+    password,
+    database: name,
+  };
+}
+
+const AppDataSource = new Sequelize(config);
 
 (async () => {
   logger.info('Connection initiated');
