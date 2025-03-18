@@ -108,11 +108,14 @@ class LearnerService {
     return Learner.findAll();
   }
 
-  async updateLearner(identifier: number, updatedData: { board_id?: string; class_id?: string; preferred_language?: string }) {
-    return Learner.update(updatedData, {
+  async updateLearner(identifier: string, updatedData: { board_id?: string; class_id?: string; preferred_language?: string }) {
+    const learner = await Learner.update(updatedData, {
       where: { identifier },
       returning: true,
     });
+    await redisService.removeKey(this._getLearnerEntKey(identifier));
+    await redisService.removeKeysWithPrefix(this.REDIS_CONSTANTS.LEARNER_LIST_MAP_PREFIX);
+    return learner;
   }
 
   async getLearnerList(req: Record<string, any>) {

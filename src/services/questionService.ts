@@ -10,54 +10,77 @@ import { redisService } from './integrations/redisService';
 
 class QuestionService {
   private readonly REDIS_CONSTANTS = {
-    QUESTIONS_BY_IDENTIFIERS_MAP_KEY_PREFIX: 'questions_by_identifiers_map_key_',
+    QUESTIONS_LIST_MAP_KEY_PREFIX: 'questions_list_map_',
+    QUESTION_ENT_KEY_PREFIX: 'question_ent',
   };
 
   private _getQuestionsByIdentifiersMapKey(hash: string) {
-    return `${this.REDIS_CONSTANTS.QUESTIONS_BY_IDENTIFIERS_MAP_KEY_PREFIX}${hash}`;
+    return `${this.REDIS_CONSTANTS.QUESTIONS_LIST_MAP_KEY_PREFIX}${hash}`;
   }
+
+  private _getQuestionEntKey(identifier: string) {
+    return `${this.REDIS_CONSTANTS.QUESTION_ENT_KEY_PREFIX}:${identifier}`;
+  }
+
   static getInstance() {
     return new QuestionService();
   }
 
   async createQuestionData(req: Optional<any, string>) {
-    return Question.create(req);
+    const question = await Question.create(req);
+    await redisService.setEntity(this._getQuestionEntKey(question.identifier), question);
+    return question;
   }
 
   async getQuestionById(id: string, additionalConditions: object = {}) {
+    let question = await redisService.getObject<Question>(this._getQuestionEntKey(id));
+    if (question) {
+      return question;
+    }
+
     // Combine base conditions with additional conditions
     const conditions = {
       identifier: id,
       ...additionalConditions, // Spread additional conditions here
     };
 
-    return Question.findOne({
+    question = await Question.findOne({
       where: conditions,
       attributes: { exclude: ['id'] },
       raw: true,
     });
+    await redisService.setEntity(this._getQuestionEntKey(id), question);
+    return question;
   }
 
   async updateQuestionData(questionIdentifier: string, updateData: any) {
     // Update the question in the database
-    return Question.update(updateData, {
+    const question = await Question.update(updateData, {
       where: { identifier: questionIdentifier },
       returning: true,
     });
+    await redisService.setEntity(this._getQuestionEntKey(questionIdentifier), question);
+    return question;
   }
 
   async publishQuestionById(id: string, updatedBy: string) {
-    return Question.update({ status: Status.LIVE, updated_by: updatedBy }, { where: { identifier: id }, returning: true });
+    const question = await Question.update({ status: Status.LIVE, updated_by: updatedBy }, { where: { identifier: id }, returning: true });
+    await redisService.removeKey(this._getQuestionEntKey(id));
+    return question;
   }
 
   async deleteQuestion(id: string) {
-    return Question.update({ is_active: false }, { where: { identifier: id }, returning: true });
+    const question = await Question.update({ is_active: false }, { where: { identifier: id }, returning: true });
+    await redisService.removeKey(this._getQuestionEntKey(id));
+    return question;
   }
 
   async discardQuestion(id: string) {
-    return Question.destroy({
+    const question = await Question.destroy({
       where: { identifier: id },
     });
+    await redisService.removeKey(this._getQuestionEntKey(id));
+    return question;
   }
 
   async getQuestionList(req: {

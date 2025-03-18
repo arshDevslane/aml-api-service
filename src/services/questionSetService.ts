@@ -5,16 +5,20 @@ import _ from 'lodash';
 import { QuestionSetPurposeType } from '../enums/questionSetPurposeType';
 import { Sequelize } from 'sequelize-typescript';
 import { DEFAULT_LIMIT } from '../constants/constants';
-import { cryptFactory } from './factories/cryptFactory';
 import { redisService } from './integrations/redisService';
 
 class QuestionSetService {
   private readonly REDIS_CONSTANTS = {
-    QUESTION_SET_ENT_KEY_PREFIX: 'question_set_ent_key_',
+    QUESTION_SET_ENT_KEY_PREFIX: 'question_set_ent',
+    QUESTION_SET_LIST_MAP_PREFIX: 'question_set_list_map_',
   };
 
-  private _getQuestionSetEntKey(hash: string) {
-    return `${this.REDIS_CONSTANTS.QUESTION_SET_ENT_KEY_PREFIX}${hash}`;
+  private _getQuestionSetEntKey(identifier: string) {
+    return `${this.REDIS_CONSTANTS.QUESTION_SET_ENT_KEY_PREFIX}:${identifier}`;
+  }
+
+  private _getQuestionSetListMapKey(hash: string) {
+    return `${this.REDIS_CONSTANTS.QUESTION_SET_LIST_MAP_PREFIX}${hash}`;
   }
 
   static getInstance() {
@@ -22,32 +26,35 @@ class QuestionSetService {
   }
 
   async getQuestionSetById(id: string) {
+    let questionSet = await redisService.getObject<QuestionSet>(this._getQuestionSetEntKey(id));
+    if (questionSet) {
+      return questionSet;
+    }
     const whereClause = {
       identifier: id,
     };
 
-    return QuestionSet.findOne({
+    questionSet = await QuestionSet.findOne({
       where: whereClause,
       attributes: { exclude: ['id'] },
       raw: true,
     });
+
+    await redisService.setEntity(this._getQuestionSetEntKey(id), questionSet);
+
+    return questionSet;
   }
 
   async getQuestionSetByIdAndStatus(id: string, additionalConditions: object = {}) {
     // Combine base conditions with additional conditions
+    let questionSet = await redisService.getObject<QuestionSet>(this._getQuestionSetEntKey(id));
+    if (questionSet) {
+      return questionSet;
+    }
     const conditions = {
       identifier: id,
       ...additionalConditions, // Spread additional conditions here
     };
-
-    const filterString = `identifier:${id},${Object.entries(additionalConditions)
-      .map(([key, value]) => `${key}:${value}`)
-      .join(',')}`;
-    const hash = cryptFactory.md5(filterString);
-    let questionSet = await redisService.getObject<QuestionSet>(this._getQuestionSetEntKey(hash));
-    if (questionSet) {
-      return questionSet;
-    }
 
     questionSet = await QuestionSet.findOne({
       where: conditions,
@@ -55,36 +62,50 @@ class QuestionSetService {
       raw: true,
     });
 
-    await redisService.setEntity(this._getQuestionSetEntKey(hash), questionSet);
+    await redisService.setEntity(this._getQuestionSetEntKey(id), questionSet);
 
     return questionSet;
   }
 
   async createQuestionSetData(req: Optional<any, string> | undefined) {
-    return QuestionSet.create(req);
+    const questionSet = await QuestionSet.create(req);
+    await redisService.removeKeysWithPrefix(this.REDIS_CONSTANTS.QUESTION_SET_LIST_MAP_PREFIX);
+    return questionSet;
   }
 
   async updateQuestionSet(identifier: string, updateData: any) {
-    return QuestionSet.update(updateData, {
+    const questionSet = await QuestionSet.update(updateData, {
       where: { identifier: identifier },
       returning: true,
     });
+    await redisService.removeKey(this._getQuestionSetEntKey(identifier));
+    await redisService.removeKeysWithPrefix(this.REDIS_CONSTANTS.QUESTION_SET_LIST_MAP_PREFIX);
+    return questionSet;
   }
 
   async publishQuestionSetById(id: string, updatedBy: string) {
-    return QuestionSet.update({ status: Status.LIVE, updated_by: updatedBy }, { where: { identifier: id }, returning: true });
+    const questionSet = await QuestionSet.update({ status: Status.LIVE, updated_by: updatedBy }, { where: { identifier: id }, returning: true });
+    await redisService.removeKey(this._getQuestionSetEntKey(id));
+    await redisService.removeKeysWithPrefix(this.REDIS_CONSTANTS.QUESTION_SET_LIST_MAP_PREFIX);
+    return questionSet;
   }
 
   // Delete a question set (soft delete)
   async deleteQuestionSet(id: string) {
-    return QuestionSet.update({ is_active: false }, { where: { identifier: id }, returning: true });
+    const questionSet = await QuestionSet.update({ is_active: false }, { where: { identifier: id }, returning: true });
+    await redisService.removeKey(this._getQuestionSetEntKey(id));
+    await redisService.removeKeysWithPrefix(this.REDIS_CONSTANTS.QUESTION_SET_LIST_MAP_PREFIX);
+    return questionSet;
   }
 
   // Discard question set (hard delete)
   async discardQuestionSet(id: string) {
-    return QuestionSet.destroy({
+    const questionSet = await QuestionSet.destroy({
       where: { identifier: id },
     });
+    await redisService.removeKey(this._getQuestionSetEntKey(id));
+    await redisService.removeKeysWithPrefix(this.REDIS_CONSTANTS.QUESTION_SET_LIST_MAP_PREFIX);
+    return questionSet;
   }
 
   async getQuestionSetList(req: {

@@ -7,11 +7,16 @@ import { cryptFactory } from './factories/cryptFactory';
 import { redisService } from './integrations/redisService';
 
 const REDIS_CONSTANTS = {
-  CONTENT_BY_IDENTIFIERS_MAP_KEY_PREFIX: 'content_by_identifiers_map_key_',
+  CONTENT_ENT_KEY_PREFIX: 'content_ent',
+  CONTENT_LIST_MAP_KEY_PREFIX: 'content_list_map_',
 };
 
-const _getContentByIdentifiersMapKey = (hash: string) => {
-  return `${REDIS_CONSTANTS.CONTENT_BY_IDENTIFIERS_MAP_KEY_PREFIX}${hash}`;
+const _getContentListMapKey = (hash: string) => {
+  return `${REDIS_CONSTANTS.CONTENT_LIST_MAP_KEY_PREFIX}${hash}`;
+};
+
+const _getContentEntKey = (identifier: string) => {
+  return `${REDIS_CONSTANTS.CONTENT_ENT_KEY_PREFIX}:${identifier}`;
 };
 
 // Get a media Content by ID
@@ -34,22 +39,30 @@ export const getContentMediaById = async (getObject: { contentId: number; mediaI
 
 // Create a new content
 export const createContentData = async (req: Optional<any, string> | undefined) => {
-  return Content.create(req);
+  const content = await Content.create(req);
+  await redisService.setEntity(_getContentEntKey(content.identifier), content);
+  return content;
 };
 
 // Get a single Content by ID
 export const getContentById = async (id: string, additionalConditions: object = {}) => {
   // Combine base conditions with additional conditions
+  let content = await redisService.getObject<Content>(_getContentEntKey(id));
+  if (content) {
+    return content;
+  }
   const conditions = {
     identifier: id,
     ...additionalConditions,
   };
 
-  return Content.findOne({
+  content = await Content.findOne({
     where: conditions,
     attributes: { exclude: ['id'] },
     raw: true,
   });
+  await redisService.setEntity(_getContentEntKey(id), content);
+  return content;
 };
 
 // Get a multiple Contents by IDs
@@ -57,7 +70,7 @@ export const getContentByIds = async (ids: string[]): Promise<any> => {
   // Combine base conditions with additional conditions
   const sortedIds = ids.sort();
   const hash = cryptFactory.md5(sortedIds.join(','));
-  let contentDetails = await redisService.getObject<Content[]>(_getContentByIdentifiersMapKey(hash));
+  let contentDetails = await redisService.getObject<Content[]>(_getContentListMapKey(hash));
   if (contentDetails) {
     return contentDetails;
   }
@@ -71,29 +84,34 @@ export const getContentByIds = async (ids: string[]): Promise<any> => {
     raw: true,
   });
 
-  await redisService.setEntity(_getContentByIdentifiersMapKey(hash), contentDetails);
+  await redisService.setEntity(_getContentListMapKey(hash), contentDetails);
 
   return contentDetails;
 };
 
 // Publish content by id
 export const publishContentById = async (id: string, updatedBy: string): Promise<any> => {
-  return Content.update({ status: Status.LIVE, updated_by: updatedBy }, { where: { identifier: id }, returning: true });
+  const content = await Content.update({ status: Status.LIVE, updated_by: updatedBy }, { where: { identifier: id }, returning: true });
+  await redisService.removeKey(_getContentEntKey(id));
+  return content;
 };
 
 // Update content by identifier
-export const updateContent = async (questionIdentifier: string, updateData: any) => {
+export const updateContent = async (identifier: string, updateData: any) => {
   // Update the question in the database
-  return Content.update(updateData, {
-    where: { identifier: questionIdentifier },
+  const content = await Content.update(updateData, {
+    where: { identifier },
     returning: true,
   });
+  await redisService.removeKey(_getContentEntKey(identifier));
+  return content;
 };
 
 // Delete content (soft delete) by identifier
 export const deleteContentByIdentifier = async (identifier: string): Promise<any> => {
-  const contentDetails = await Content.update({ is_active: false }, { where: { identifier }, returning: true });
-  return contentDetails;
+  const content = await Content.update({ is_active: false }, { where: { identifier }, returning: true });
+  await redisService.removeKey(_getContentEntKey(identifier));
+  return content;
 };
 
 // Discard content (hard delete) by identifier
@@ -101,7 +119,7 @@ export const discardContentByIdentifier = async (identifier: string): Promise<an
   const content = await Content.destroy({
     where: { identifier },
   });
-
+  await redisService.removeKey(_getContentEntKey(identifier));
   return content;
 };
 

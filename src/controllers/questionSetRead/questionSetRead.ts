@@ -22,7 +22,7 @@ const readQuestionSetById = async (req: Request, res: Response) => {
   const msgid = _.get(req, ['body', 'params', 'msgid']);
   const resmsgid = _.get(res, 'resmsgid');
 
-  const questionSet = await questionSetService.getQuestionSetByIdAndStatus(questionSet_id);
+  const questionSet = await questionSetService.getQuestionSetById(questionSet_id);
 
   // Validating if question set exists
   if (_.isEmpty(questionSet)) {
