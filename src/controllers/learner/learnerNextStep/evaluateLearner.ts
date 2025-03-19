@@ -139,7 +139,7 @@ const evaluateLearner = async (req: Request, res: Response) => {
     const requiredL1Skills = await skillService.fetchSkillsByIds(requiredL1SkillsIds);
 
     let questionSetId: string = '';
-    let allQuestionsAttempted = false;
+    // let allQuestionsAttempted = false;
 
     for (const skillEntity of requiredL1Skills) {
       const { identifier: skillIdentifier } = skillEntity;
@@ -171,7 +171,7 @@ const evaluateLearner = async (req: Request, res: Response) => {
              * Adding continue here, so that if all the questions till the highest applicable grade are
              * completed, then question sets don't repeat for current l1_skill
              */
-            allQuestionsAttempted = true;
+            // allQuestionsAttempted = true;
             continue;
           }
         }
@@ -230,17 +230,17 @@ const evaluateLearner = async (req: Request, res: Response) => {
     }
 
     // TODO: Remove later
-    if (!questionSetId && requiredL1Skills.length && !allQuestionsAttempted) {
-      const practiceQuestionSet = await questionSetService.getPracticeQuestionSet({
-        repositoryIds,
-        classId: highestApplicableGradeMapping.identifier,
-        l1SkillId: requiredL1Skills[requiredL1Skills.length - 1].identifier,
-      });
+    // if (!questionSetId && requiredL1Skills.length && !allQuestionsAttempted) {
+    //   const practiceQuestionSet = await questionSetService.getPracticeQuestionSet({
+    //     repositoryIds,
+    //     classId: highestApplicableGradeMapping.identifier,
+    //     l1SkillId: requiredL1Skills[requiredL1Skills.length - 1].identifier,
+    //   });
 
-      if (practiceQuestionSet) {
-        questionSetId = practiceQuestionSet.identifier;
-      }
-    }
+    //   if (practiceQuestionSet) {
+    //     questionSetId = practiceQuestionSet.identifier;
+    //   }
+    // }
 
     ResponseHandler.successResponse(req, res, {
       status: httpStatus.OK,
