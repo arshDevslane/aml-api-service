@@ -15,6 +15,7 @@ import { tenantService } from '../../services/tenantService';
 import { User } from '../../models/users';
 import { skillService } from '../../services/skillService';
 import { repositoryService } from '../../services/repositoryService';
+import { deleteFileFromS3, getFileUrlByFolderAndFileName } from '../../services/awsService';
 
 export const apiId = 'api.content.update';
 
@@ -45,6 +46,28 @@ const contentUpdate = async (req: Request, res: Response) => {
 
   // Initialize an updated body
   const updatedDataBody: any = {};
+
+  // Handle removed videos if present
+  if (dataBody?.removed_videos && Array.isArray(dataBody?.removed_videos)) {
+    const currentMedia = content.media || [];
+    const mediaToRemove = currentMedia.filter((media) => dataBody.removed_videos.some((video: { src: string; fileName: string }) => video.src === media.src && video.fileName === media.fileName));
+
+    // Delete files from S3
+    for (const media of mediaToRemove) {
+      try {
+        const filePath = `${media.src}/${media.fileName}`;
+        await deleteFileFromS3(filePath);
+        logger.info({ apiId, msgid, resmsgid, contentId, filePath, message: 'File deleted from S3 successfully' });
+      } catch (error) {
+        logger.error({ apiId, msgid, resmsgid, contentId, error, message: 'Failed to delete file from S3' });
+        // Continue with other deletions even if one fails
+      }
+    }
+
+    // Update media array in database
+    const updatedMedia = currentMedia.filter((media) => !dataBody.removed_videos.some((video: { src: string; fileName: string }) => video.src === media.src && video.fileName === media.fileName));
+    updatedDataBody.media = updatedMedia;
+  }
 
   // Extract and check tenant
   if (dataBody.tenant) {
@@ -182,6 +205,17 @@ const contentUpdate = async (req: Request, res: Response) => {
   // Update Content
   const [, affectedRows] = await updateContent(contentId, { ...dataBody, ...updatedDataBody });
   const updatedContent = affectedRows[0].dataValues;
+
+  // Add URLs to media objects in the response
+  const mediaWithUrls = updatedContent?.media
+    ?.filter((v: any) => !!v)
+    ?.map((media: any) => ({
+      ...media,
+      url: getFileUrlByFolderAndFileName(media?.src, media?.fileName),
+      language: media?.language || 'en',
+    }));
+
+  _.set(updatedContent, 'media', mediaWithUrls);
 
   logger.info({ apiId, msgid, resmsgid, contentId, message: 'Content successfully updated' });
   ResponseHandler.successResponse(req, res, { status: httpStatus.OK, data: { message: 'Content successfully updated', content: updatedContent ?? {} } });

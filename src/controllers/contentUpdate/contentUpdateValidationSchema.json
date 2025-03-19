@@ -103,6 +103,25 @@
             "additionalProperties": false
           },
           "uniqueItems": true
+        },
+        "removed_videos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "src": {
+                "type": "string",
+                "description": "The source path of the video in S3"
+              },
+              "fileName": {
+                "type": "string",
+                "description": "The filename of the video in S3"
+              }
+            },
+            "required": ["src", "fileName"],
+            "additionalProperties": false
+          },
+          "description": "Array of video objects to be removed from both S3 and content"
         }
       },
       "additionalProperties": false
