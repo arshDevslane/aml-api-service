@@ -2452,3 +2452,10 @@ ALTER TABLE learner_sessions ALTER COLUMN data SET NOT NULL;
 ALTER TABLE learner_sessions ADD COLUMN "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW();
 ALTER TABLE learner_sessions ADD COLUMN "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW();
 
+------------------------------------------------------------------
+-- Add column sequence in class_master table --
+------------------------------------------------------------------
+
+alter table class_master add column sequence  integer default 0 not null;
+
+
