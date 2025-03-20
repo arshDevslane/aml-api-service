@@ -16,6 +16,10 @@ const _getLearnerJourneyEntKey = (identifier: string) => {
 export const createLearnerJourney = async (transaction: any, req: Optional<any, string> | undefined): Promise<any> => {
   const learnerJourney = await LearnerJourney.create(req, { transaction, raw: true });
 
+  const filterString = `learner_id:${learnerJourney.learner_id},question_set_id:${learnerJourney.question_set_id}`;
+  const hash = cryptFactory.md5(filterString);
+  await redisService.setEntity(_getLearnerJourneyEntKey(hash), learnerJourney);
+
   await redisService.setEntity(_getLearnerJourneyEntKey(learnerJourney.learner_id), learnerJourney);
 
   return learnerJourney;
@@ -46,7 +50,13 @@ export const readLearnerJourney = async (learnerId: string): Promise<{ learnerJo
     raw: true,
   });
 
-  await redisService.setEntity(_getLearnerJourneyEntKey(learnerId), learnerJourney);
+  if (learnerJourney) {
+    const filterString = `learner_id:${learnerJourney.learner_id},question_set_id:${learnerJourney.question_set_id}`;
+    const hash = cryptFactory.md5(filterString);
+    await redisService.setEntity(_getLearnerJourneyEntKey(hash), learnerJourney);
+
+    await redisService.setEntity(_getLearnerJourneyEntKey(learnerId), learnerJourney);
+  }
 
   return { learnerJourney };
 };
@@ -66,6 +76,7 @@ export const readLearnerJourneyByLearnerIdAndQuestionSetId = async (learnerId: s
   });
 
   await redisService.setEntity(_getLearnerJourneyEntKey(hash), learnerJourney);
+  await redisService.setEntity(_getLearnerJourneyEntKey(learnerId), learnerJourney);
 
   return { learnerJourney };
 };
